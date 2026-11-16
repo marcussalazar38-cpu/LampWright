@@ -1,0 +1,2651 @@
+<!DOCTYPE html>
+<!-- Built by build.py from index.html, style.css, app.js and geometry.js. Edit those, not this file. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lampwright — design a lamp, print it</title>
+<style>
+:root {
+  --paper: #f2f2ef;
+  --card: #ffffff;
+  --ink: #16181b;
+  --ink-2: #474c53;
+  --ink-3: #62676e;
+  --line: #d8d8d3;
+  --line-strong: #b9b9b3;
+  --yellow: #ffc23a;
+  --yellow-ink: #3a2a00;
+  --danger: #a8281f;
+  --ok: #1c6a3a;
+  --radius: 7px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums;
+  caret-color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--yellow); color: var(--yellow-ink); }
+
+#design { display: grid; grid-template-columns: 392px 1fr; height: 100vh; }
+a { color: inherit; }
+
+/* ---------- Home and guide pages ---------- */
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 18px clamp(20px, 5vw, 72px);
+  font-size: 15px;
+}
+.site-nav a { text-decoration: none; color: var(--ink-2); transition: color 0.2s var(--ease); }
+.site-nav a:hover, .site-nav a[aria-current] { color: var(--ink); }
+.site-nav .brand { margin-right: auto; display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 650; letter-spacing: -0.02em; color: var(--ink); }
+.site-nav .brand::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 1px rgba(58, 42, 0, 0.25) inset; }
+.site-nav .cta { padding: 9px 16px; border-radius: var(--radius); background: var(--ink); color: #fff; font-weight: 600; }
+.site-nav .cta:hover { color: #fff; background: #2a2d32; }
+
+.btn {
+  display: inline-block;
+  padding: 13px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.btn:hover { border-color: var(--ink); }
+.btn:active { transform: scale(0.98); }
+.btn.solid { background: var(--yellow); border-color: var(--yellow); color: var(--yellow-ink); }
+.btn.solid:hover { background: #ffd067; border-color: #ffd067; }
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  min-height: min(78vh, 760px);
+  margin: 8px clamp(20px, 5vw, 72px) 0;
+  background: #171615;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.hero-text { align-self: center; padding: clamp(28px, 5vw, 72px); color: #f2f2ef; }
+.hero h1 { margin: 0; font-size: clamp(38px, 5.2vw, 76px); font-weight: 650; line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
+.hero p { margin: 22px 0 0; max-width: 46ch; font-size: 18px; line-height: 1.55; color: #c9c8c2; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.hero .btn:not(.solid) { color: #f2f2ef; border-color: #55534e; }
+.hero .btn:not(.solid):hover { border-color: #f2f2ef; }
+#hero-stage { position: relative; min-height: 340px; }
+#hero-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: default; }
+
+.band { margin: 0 clamp(20px, 5vw, 72px); padding: clamp(48px, 7vw, 96px) 0 0; }
+.band h2, .guide h2 { margin: 0 0 22px; font-size: clamp(24px, 2.6vw, 34px); font-weight: 650; letter-spacing: -0.025em; line-height: 1.15; text-wrap: balance; }
+.stages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); counter-reset: stage; border-top: 2px solid var(--ink); }
+.stages li { counter-increment: stage; padding: 20px 28px 0 0; }
+.stages li + li { padding-left: 28px; border-left: 1px solid var(--line); }
+.stages h3 { margin: 0 0 8px; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+.stages h3::before { content: counter(stage) ". "; color: var(--ink-3); }
+.stages p { margin: 0; font-size: 16px; line-height: 1.6; color: var(--ink-2); max-width: 38ch; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 6vw, 96px); }
+.plain { margin: 0; padding: 0; list-style: none; font-size: 16px; line-height: 1.55; color: var(--ink-2); }
+.plain li { padding: 12px 0; border-top: 1px solid var(--line); max-width: 52ch; }
+
+.ways { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0; border-top: 2px solid var(--ink); }
+.way { display: block; padding: 22px 26px 26px; text-decoration: none; border-bottom: 1px solid var(--line); }
+.way + .way { border-left: 1px solid var(--line); }
+.way h3 { margin: 0 0 8px; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+.way p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink-2); max-width: 40ch; }
+.way.lead { background: var(--yellow); border-bottom-color: var(--yellow); }
+.way.lead h3 { font-size: clamp(26px, 3vw, 38px); letter-spacing: -0.025em; color: var(--yellow-ink); }
+.way.lead p { color: #4d3a08; font-size: 17px; }
+.way:hover h3 { text-decoration: underline; text-underline-offset: 4px; }
+.soon { display: inline-block; padding: 10px 0; color: var(--ink-3); font-size: 15px; font-weight: 600; }
+.plain-numbers { margin: 0 0 14px; padding-left: 22px; color: var(--ink); }
+.plain-numbers li { padding: 3px 0 3px 4px; }
+.demo .btn { padding: 8px 14px; font-size: 14px; background: transparent; color: var(--ink); font-family: inherit; cursor: pointer; }
+@media (max-width: 860px) { .ways { grid-template-columns: 1fr; } .way + .way { border-left: 0; } }
+
+@media print {
+  .site-nav, .demo, .guide-actions, .btn, #design, #home, #kits { display: none !important; }
+  html, body { background: #fff; height: auto; }
+  .guide { max-width: none; padding: 0; font-size: 12pt; }
+  .guide h2 { margin-top: 28pt; break-after: avoid; }
+  figure, .steps li, .shop li, .figure-row { break-inside: avoid; }
+  .shop a { color: #000; }
+  .shop a::after { content: " (" attr(href) ")"; font-weight: 400; font-size: 9pt; word-break: break-all; }
+}
+
+.kit-list { list-style: none; margin: 36px 0 28px; padding: 0; border-top: 2px solid var(--ink); }
+.kit-list li { display: grid; grid-template-columns: 150px 1fr; gap: 28px; align-items: center; padding: 26px 0; border-bottom: 1px solid var(--line); }
+.kit-list svg { width: 150px; height: 114px; fill: var(--card); stroke: var(--ink); stroke-width: 0.5; stroke-linejoin: round; }
+.kit-list h2 { margin: 0 0 6px; font-size: 26px; }
+.kit-list p { margin: 0 0 6px; }
+.kit-list .has { font-size: 15px; color: var(--ink-3); }
+.kit-list .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.kit-list .btn { padding: 10px 16px; font-size: 15px; background: transparent; color: var(--ink); font-family: inherit; cursor: pointer; }
+.kit-list .btn.solid { background: var(--yellow); color: var(--yellow-ink); }
+#kit-status:empty { display: none; }
+@media (max-width: 640px) { .kit-list li { grid-template-columns: 1fr; } }
+
+.guides { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 2px solid var(--ink); }
+.guides a { display: block; padding: 20px 28px 22px 0; text-decoration: none; border-bottom: 1px solid var(--line); transition: background 0.2s var(--ease); }
+.guides a + a { padding-left: 28px; border-left: 1px solid var(--line); }
+.guides a:hover h3 { text-decoration: underline; text-underline-offset: 4px; }
+.guides h3 { margin: 0 0 6px; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+.guides p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink-2); max-width: 44ch; }
+.guide .shop { max-width: 72ch; font-size: 16px; }
+.guide .shop .check { font-size: 15px; }
+.guide .shop a { font-size: 15px; }
+.guide-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.guide-actions .btn { background: transparent; color: var(--ink); font-family: inherit; cursor: pointer; }
+.guide-actions .btn.solid { background: var(--yellow); color: var(--yellow-ink); }
+@media (max-width: 860px) { .guides { grid-template-columns: 1fr; } .guides a + a { padding-left: 0; border-left: 0; } }
+
+.site-foot { display: flex; gap: 28px; margin: clamp(56px, 8vw, 110px) clamp(20px, 5vw, 72px) 0; padding: 22px 0 40px; border-top: 1px solid var(--line); font-size: 15px; color: var(--ink-2); }
+
+.guide { max-width: 1040px; margin: 0 auto; padding: 28px clamp(20px, 5vw, 72px) 90px; font-size: 16.5px; line-height: 1.65; color: var(--ink-2); }
+.guide h1 { margin: 0; font-size: clamp(32px, 4vw, 52px); font-weight: 650; letter-spacing: -0.03em; line-height: 1.08; color: var(--ink); text-wrap: balance; }
+.guide .lede { margin: 16px 0 0; max-width: 68ch; font-size: 18px; }
+.guide h2 { margin-top: 64px; color: var(--ink); }
+.guide p { max-width: 68ch; }
+.figure-row { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(20px, 4vw, 56px); align-items: center; }
+.figure-text p:first-child { margin-top: 0; }
+figure { margin: 0; padding: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+figure.wide { max-width: 620px; }
+.dg { display: block; width: 100%; height: auto; }
+.dg text { font: 14px "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; fill: var(--ink); }
+.dg.big text { font-size: 21px; }
+.dg .lite { fill: #e9e9e4; stroke: var(--ink); stroke-width: 1.2; }
+.dg .turn { fill: var(--yellow); stroke: var(--ink); stroke-width: 1.2; }
+.dg .dark { fill: var(--ink); }
+.dg .ln { stroke: var(--ink); stroke-width: 1.2; fill: none; }
+.dg .dash { stroke: var(--line-strong); stroke-width: 1.2; stroke-dasharray: 4 5; fill: none; }
+.demo { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 14px; color: var(--ink-2); white-space: nowrap; }
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; max-width: 72ch; }
+.steps li { counter-increment: step; position: relative; padding: 14px 0 14px 52px; border-top: 1px solid var(--line); }
+.steps li::before { content: counter(step); position: absolute; left: 0; top: 12px; width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 600; display: grid; place-items: center; }
+.safety { margin: 28px 0; padding: 16px 18px; background: var(--card); border: 1px solid var(--ink); border-radius: 10px; color: var(--ink); }
+
+header h1 a { text-decoration: none; }
+header p a { color: var(--ink-3); text-underline-offset: 3px; }
+header p a:hover { color: var(--ink); }
+
+@media (max-width: 860px) {
+  .hero, .figure-row, .split { grid-template-columns: 1fr; }
+  #hero-stage { min-height: 300px; }
+  .stages { grid-template-columns: 1fr; }
+  .stages li + li { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); margin-top: 20px; }
+  .site-nav { gap: 16px; }
+}
+
+/* ---------- Spec-sheet panel ---------- */
+
+#panel {
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  padding: 22px 24px 0;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+#panel::-webkit-scrollbar { width: 8px; }
+#panel::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+
+header h1 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+header h1::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 0 1px rgba(58, 42, 0, 0.25) inset;
+}
+header p { margin: 3px 0 0 21px; color: var(--ink-3); font-size: 13px; }
+
+/* Saved lamps */
+#shelf-bar { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; margin-top: 16px; }
+#designName {
+  min-width: 0;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  font: inherit;
+  font-weight: 600;
+  transition: border-color 0.2s var(--ease);
+}
+#designName:hover, #designName:focus { border-color: var(--ink); }
+button.small { width: auto; padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+
+#shelf { margin-top: 8px; padding: 10px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+#shelf-list { list-style: none; margin: 0 0 8px; padding: 0; max-height: 216px; overflow-y: auto; }
+#shelf-list li { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line); }
+#shelf-list li:last-child { border-bottom: 0; }
+#shelf-list li.empty { padding: 6px 2px 10px; color: var(--ink-3); font-size: 13px; }
+#shelf-list .open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 4px;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.2s var(--ease);
+}
+#shelf-list .open:hover { background: var(--paper); }
+#shelf-list svg { flex: none; width: 34px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linejoin: round; }
+#shelf-list span { min-width: 0; display: grid; }
+#shelf-list strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#shelf-list small { color: var(--ink-3); font-size: 12px; }
+#shelf-list .del {
+  flex: none;
+  background: transparent;
+  border: 0;
+  padding: 6px;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+#shelf-list .del:hover, #shelf-list .del[data-armed] { color: var(--danger); }
+#shelf-status { margin: 0 0 8px; min-height: 18px; font-size: 12.5px; color: var(--ink-2); }
+#shelf-status:empty { display: none; }
+
+#steps {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin: 20px -24px 0;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+#steps button {
+  position: relative;
+  background: transparent;
+  border: 0;
+  color: var(--ink-3);
+  padding: 8px 0 10px;
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s var(--ease);
+}
+#steps button b { display: block; font-size: 11px; font-weight: 500; color: var(--ink-3); }
+#steps button::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 8px; bottom: -1px;
+  height: 3px;
+  background: var(--yellow);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s var(--ease);
+}
+#steps button:hover { color: var(--ink); }
+#steps button[aria-current="step"] { color: var(--ink); font-weight: 600; }
+#steps button[aria-current="step"]::after { transform: scaleX(1); }
+
+#step-head { margin-top: 22px; }
+#step-title { margin: 0; font-size: 23px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; }
+#step-desc { margin: 4px 0 18px; color: var(--ink-3); }
+
+h3 { margin: 22px 0 10px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.step > h3:first-child { margin-top: 0; }
+
+.step { display: none; }
+.step.active { display: block; }
+
+/* Starting forms */
+.forms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 18px; }
+.forms button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: var(--card);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 9px 4px 7px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.forms svg { width: 54px; height: 40px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+.forms button:hover { border-color: var(--ink); color: var(--ink); }
+.forms button:active { transform: scale(0.97); }
+.forms button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* Sliders */
+.slider { margin-bottom: 12px; }
+.slider .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1px; color: var(--ink-2); }
+.slider output { color: var(--ink); font-weight: 600; }
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: var(--line-strong); border-radius: 1px; }
+input[type="range"]::-moz-range-track { height: 2px; background: var(--line-strong); border-radius: 1px; }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 3px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--ink);
+  transition: transform 0.2s var(--ease), background 0.2s var(--ease);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 3px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
+input[type="range"]:active::-webkit-slider-thumb { background: var(--yellow); }
+
+/* Rows and selects */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--ink-2);
+}
+
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  max-width: 210px;
+  background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%2316181b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 10px center;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 6px 28px 6px 10px;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease);
+}
+select:hover { border-color: var(--ink); }
+
+#dims { margin-top: 8px; padding-top: 2px; border-top: 1px solid var(--line); }
+
+/* Footer stays in reach */
+#panel > footer {
+  position: sticky;
+  bottom: 0;
+  margin: auto -24px 0;
+  padding: 14px 24px 18px;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}
+
+#warnings { margin: 0 0 12px; padding: 0; list-style: none; color: var(--danger); font-size: 13px; }
+#warnings:empty { display: none; }
+#warnings li { position: relative; margin-bottom: 4px; padding-left: 16px; }
+#warnings li::before { content: ""; position: absolute; left: 2px; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+
+#fit { margin: 2px 0 12px; font-weight: 500; }
+#fit.ok { color: var(--ok); }
+#fit.bad { color: var(--danger); }
+
+.nav { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+button.primary, button.ghost {
+  width: 100%;
+  border-radius: var(--radius);
+  padding: 11px 12px;
+  font: 600 14px/1.1 inherit;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+button.primary { background: var(--ink); color: #fff; border: 1px solid var(--ink); }
+button.primary:hover { background: #2a2d32; }
+button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
+button.ghost:hover { border-color: var(--ink); }
+button.primary:active, button.ghost:active { transform: scale(0.98); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 3px; }
+input[type="range"]:focus-visible { outline: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1px var(--ink), 0 0 0 4px var(--yellow); }
+
+/* Make step: the spec sheet */
+#summary { display: grid; grid-template-columns: auto 1fr; margin: 4px 0 6px; border-top: 1px solid var(--line); }
+#summary dt, #summary dd { padding: 7px 0; border-bottom: 1px solid var(--line); }
+#summary dt { color: var(--ink-3); padding-right: 16px; }
+#summary dd { margin: 0; text-align: right; font-weight: 500; }
+
+#advice { margin: 0 0 16px; padding: 0 0 0 16px; font-size: 13px; color: var(--ink-2); max-width: 70ch; }
+#advice li { margin-bottom: 7px; }
+#advice li::marker { color: var(--line-strong); }
+
+.exports { display: grid; gap: 8px; margin-bottom: 8px; }
+
+/* Build step */
+.list { margin: 0 0 14px; padding: 0 0 0 20px; color: var(--ink-2); max-width: 70ch; }
+.list li { margin-bottom: 8px; padding-left: 2px; }
+.list li::marker { color: var(--ink-3); font-weight: 600; }
+.shop { list-style: none; margin: 0 0 6px; padding: 0; border-top: 1px solid var(--line); }
+.shop li { display: grid; gap: 3px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.shop .what { color: var(--ink); font-weight: 500; }
+.shop .check { color: var(--ink-3); font-size: 13px; }
+.shop a { justify-self: start; font-size: 13px; font-weight: 600; text-underline-offset: 3px; }
+.shop a:hover { text-decoration-thickness: 2px; }
+#bomDownload { margin-top: 14px; }
+.prose { margin: 0 0 10px; color: var(--ink-2); max-width: 70ch; }
+#look input[type="range"] { width: 84px; }
+
+.note { margin: 12px 0 0; font-size: 12.5px; color: var(--ink-3); }
+.note.scale-note { margin: -4px 0 16px; }
+
+/* ---------- Studio ---------- */
+
+#stage { position: relative; min-width: 0; height: 100vh; background: #d6d5d1; }
+#view { display: block; width: 100%; height: 100%; cursor: grab; }
+#view:active { cursor: grabbing; }
+
+#look {
+  position: absolute;
+  left: 50%; bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  width: max-content;
+  max-width: calc(100% - 28px);
+  padding: 9px 16px;
+  background: var(--card);
+  border-radius: 22px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 10px 28px rgba(0, 0, 0, 0.16);
+  font-size: 13px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+#look label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+/* Switches */
+#look input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  width: 34px; height: 20px;
+  margin: 0;
+  border-radius: 10px;
+  background: var(--line-strong);
+  cursor: pointer;
+  transition: background 0.3s var(--ease);
+}
+#look input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s var(--ease);
+}
+#look input[type="checkbox"]:checked { background: var(--ink); }
+#look input#lit:checked { background: var(--yellow); }
+#look input[type="checkbox"]:checked::after { transform: translateX(14px); }
+
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px; height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 50%; }
+
+#hint {
+  position: absolute;
+  top: 18px; left: 22px;
+  margin: 0;
+  font-size: 12.5px;
+  color: rgba(22, 24, 27, 0.62);
+  pointer-events: none;
+  transition: color 0.6s var(--ease);
+}
+body[data-lit="true"] #hint { color: rgba(255, 255, 255, 0.6); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; }
+}
+
+@media (max-width: 820px) {
+  #design { grid-template-columns: 1fr; grid-template-rows: 46vh auto; height: auto; }
+  #stage { grid-row: 1; height: 46vh; }
+  #panel { grid-row: 2; height: auto; border-right: 0; border-top: 1px solid var(--line); }
+  #look { gap: 12px; padding: 8px 12px; bottom: 12px; }
+  #hint { display: none; }
+}
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div class="view" id="home">
+  <nav class="site-nav" aria-label="Site">
+    <a class="brand" href="#/">Lampwright</a>
+    <a href="#/kits">Ready-made lamps</a>
+    <a class="cta" href="#/design">Open the designer</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Your first engineering project is a lamp.</h1>
+      <p>Lampwright takes you from an idea to a working lamp you made yourself. Shape it on screen, 3D print it, then wire in a switch: a push button, a touch sensor, or our favourite, a dimmer you work by twisting the shade.</p>
+      <div class="hero-actions">
+        <a class="btn solid" href="#/design">Design your lamp</a>
+        <a class="btn" href="#/kits">Or start from a finished lamp</a>
+      </div>
+    </div>
+    <div id="hero-stage" aria-label="A live 3D view of the lamp currently in the designer"></div>
+  </section>
+
+  <section class="band">
+    <h2>Three ways to switch it on</h2>
+    <div class="ways">
+      <a class="way lead" href="#/kits"><h3>Twist to dim</h3><p>Our favourite. The shade itself is the knob: turn it, and two printed gears move a potentiometer that sets how bright the lamp glows.</p></a>
+      <a class="way" href="#/kits"><h3>Push to switch</h3><p>A button in the side of the base clicks the lamp on and off.</p></a>
+      <a class="way" href="#/kits"><h3>Tap to switch</h3><p>A touch sensor hidden behind the wall of the base. It runs from a battery, so there is no cord.</p></a>
+    </div>
+  </section>
+
+  <section class="band">
+    <h2>Three stages, one working lamp</h2>
+    <ol class="stages">
+      <li><h3>Design</h3><p>Pick a starting form and change it with sliders: height, width, ribs, cut-outs. The model updates as you move them, and the app warns you when something will not print or the bulb will not fit.</p></li>
+      <li><h3>Print</h3><p>Download the parts for your 3D printer. The app tells you how much plastic you need, roughly how long it takes, and which parts need supports.</p></li>
+      <li><h3>Build</h3><p>Fit the bulb holder and wire in a switch: a twist dimmer, a push button or a touch sensor. Each ready-made lamp comes with a shopping guide and step-by-step instructions.</p></li>
+    </ol>
+  </section>
+
+  <section class="band split">
+    <div>
+      <h2>What you pick up along the way</h2>
+      <ul class="plain">
+        <li>How designers change a shape with numbers instead of redrawing it</li>
+        <li>Why printed parts need gaps to fit together, and how big those gaps are</li>
+        <li>How two gears trade a small twist for a big turn</li>
+        <li>What a potentiometer is and how a circuit reads it</li>
+        <li>How to read a parts list and wire a safe, low-voltage circuit</li>
+      </ul>
+    </div>
+    <div>
+      <h2>For teachers and club leaders</h2>
+      <ul class="plain">
+        <li>It runs in a web browser. There is nothing to install and no account to make.</li>
+        <li>Each design saves as a small file a student can hand in or share.</li>
+        <li>The dimmer runs on a 12 V plug-in adapter, so nobody wires mains voltage.</li>
+        <li>You need a 3D printer and a handful of low-voltage parts.</li>
+      </ul>
+    </div>
+  </section>
+
+
+  <footer class="site-foot">
+    <a href="#/design">Open the designer</a>
+    <a href="#/kits">Ready-made lamps</a>
+  </footer>
+</div>
+
+
+<div class="view" id="kits" hidden>
+  <nav class="site-nav" aria-label="Site">
+    <a class="brand" href="#/">Lampwright</a>
+    <a href="#/kits" aria-current="page">Ready-made lamps</a>
+    <a class="cta" href="#/design">Open the designer</a>
+  </nav>
+
+  <article class="guide">
+    <h1>Ready-made lamps</h1>
+    <p class="lede">Three finished designs, one for each way of switching a lamp on. Nothing to design: pick one, print the files, buy the parts and follow the steps.</p>
+    <ul id="kit-list" class="kit-list"></ul>
+    <p>Opening a ready-made lamp replaces the lamp in the designer. If you have been designing your own, save it to My lamps first.</p>
+    <p id="kit-status" role="status"></p>
+  </article>
+</div>
+
+
+<div class="view" id="design" hidden>
+<aside id="panel">
+  <header>
+    <h1><a href="#/">Lampwright</a></h1>
+    <p><a href="#/">Home</a> · <a href="#/kits">Ready-made lamps</a></p>
+    <div id="shelf-bar">
+      <input id="designName" type="text" aria-label="Name of this lamp" maxlength="40" spellcheck="false">
+      <button id="saveDesign" type="button" class="ghost small">Save</button>
+      <button id="toggleShelf" type="button" class="ghost small" aria-expanded="false" aria-controls="shelf">My lamps</button>
+    </div>
+    <div id="shelf" hidden>
+      <ul id="shelf-list"></ul>
+      <p id="shelf-status" role="status"></p>
+      <div class="pair">
+        <button id="exportDesign" type="button" class="ghost small">Export file</button>
+        <button id="importDesign" type="button" class="ghost small">Import file</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <nav id="steps" aria-label="Lamp workflow"></nav>
+
+  <div id="step-head">
+    <h2 id="step-title"></h2>
+    <p id="step-desc"></p>
+  </div>
+
+  <section class="step" data-step="shade">
+    <h3>Starting form</h3>
+    <div id="forms" class="forms"></div>
+    <div id="shade-controls"></div>
+    <div id="shade-selects"></div>
+    <div class="pair">
+      <button id="random" type="button" class="ghost">Surprise me</button>
+      <button id="reset" type="button" class="ghost">Start over</button>
+    </div>
+  </section>
+
+  <section class="step" data-step="surface">
+    <div id="surface-selects"></div>
+    <div id="surface-controls"></div>
+    <div id="cut-selects"></div>
+    <div id="cut-controls"></div>
+    <p class="note">Cut-outs are holes through the shade. Their top edges print as short bridges, so keep them small for a clean result.</p>
+  </section>
+
+  <section class="step" data-step="skin">
+    <div id="skin-selects"></div>
+    <div id="skin-controls"></div>
+    <p class="note">Skin is a fine texture on the outside of the shade. It makes a much denser model, so files are larger.</p>
+  </section>
+
+  <section class="step" data-step="bulb">
+    <div id="bulb-selects"></div>
+    <div id="bulb-controls"></div>
+    <p id="fit" role="status"></p>
+    <button id="fitBulb" type="button" class="ghost">Resize shade to fit this bulb</button>
+    <p class="note">Socket hole sizes are typical values. Measure your own lamp holder before printing. Use LED bulbs only: printed plastic softens with heat.</p>
+  </section>
+
+  <section class="step" data-step="base">
+    <div id="base-selects"></div>
+    <div id="base-controls"></div>
+    <div id="base-selects-2"></div>
+    <div id="base-controls-2"></div>
+    <div id="dimmer-selects"></div>
+    <div id="dimmer-controls"></div>
+  </section>
+
+  <section class="step" data-step="make">
+    <div id="make-selects"></div>
+    <div id="make-controls"></div>
+    <p class="note scale-note">For a small test print, shrink the lamp here. The wall keeps its thickness, so it still prints.</p>
+    <dl id="summary"></dl>
+    <h3>Before you print</h3>
+    <ul id="advice"></ul>
+    <div id="exports" class="exports"></div>
+  </section>
+
+  <section class="step" data-step="build">
+    <h3>Your design is ready to print</h3>
+    <p class="prose">Download your files in step 06. Wiring and assembly are up to you: the designer makes the parts, not the instructions.</p>
+    <h3>Want it step by step?</h3>
+    <p class="prose">Each ready-made lamp comes with print files, a shopping guide that names every part to buy, and a build guide with numbered assembly steps.</p>
+    <a class="btn solid" href="#/kits">See the ready-made lamps</a>
+  </section>
+
+  <section id="dims">
+    <h3>Dimensions</h3>
+    <div id="dim-controls"></div>
+  </section>
+
+  <footer>
+    <ul id="warnings" role="status"></ul>
+    <div class="nav">
+      <button id="back" type="button" class="ghost">Back</button>
+      <button id="next" type="button" class="primary">Next</button>
+    </div>
+  </footer>
+</aside>
+
+<main id="stage">
+  <canvas id="view"></canvas>
+  <div id="look">
+    <label><input type="checkbox" id="lit"> Lamp on</label>
+    <label id="twistWrap" hidden>Twist <input type="range" id="twist" min="0" max="100" value="100" aria-label="Twist the shade to dim"></label>
+    <label><input type="checkbox" id="showShade"> Show shade</label>
+    <label><input type="checkbox" id="showWall"> Wall</label>
+    <label><input type="color" id="color"> Shade</label>
+    <label><input type="color" id="baseColor"> Base</label>
+  </div>
+  <p id="hint">Drag to rotate · scroll to zoom · right-drag to pan</p>
+</main>
+</div>
+
+<script type="module">
+const geometryModule = (() => {
+// Lamp geometry: everything here is plain math, Z up, millimetres.
+
+const TAU = Math.PI * 2;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+const RING_T = 3;        // pendant socket ring thickness
+const PLATE_T = 4;       // base top plate thickness
+const COLLAR_H = 6;      // collar that locates the shade on the base
+const COLLAR_W = 2.4;
+
+// ---------- Starting forms ----------
+
+const FORMS = {
+  sphere:   { label: 'Sphere',     uses: ['top', 'bottom'], defaults: { height: 180, width: 200, topOpen: 90,  bottomOpen: 120 } },
+  cylinder: { label: 'Cylinder',   uses: [],                defaults: { height: 200, width: 160, topOpen: 160, bottomOpen: 160 } },
+  cone:     { label: 'Cone',       uses: ['top'],           defaults: { height: 170, width: 220, topOpen: 90,  bottomOpen: 220 } },
+  pear:     { label: 'Pear',       uses: ['top', 'bottom'], defaults: { height: 230, width: 180, topOpen: 70,  bottomOpen: 110 } },
+  torus:    { label: 'Torus',      uses: ['top', 'bottom'], defaults: { height: 120, width: 260, topOpen: 120, bottomOpen: 120 } },
+  free:     { label: 'Free curve', uses: [],                defaults: { height: 200, width: 180, topOpen: 80,  bottomOpen: 110 } },
+  dome:     { label: 'Dome',       uses: ['top'],           defaults: { height: 130, width: 240, topOpen: 70,  bottomOpen: 240 } },
+  bell:     { label: 'Bell',       uses: ['top'],           defaults: { height: 180, width: 230, topOpen: 70,  bottomOpen: 230 } },
+  disc:     { label: 'Disc',       uses: ['top'],           defaults: { height: 80,  width: 300, topOpen: 80,  bottomOpen: 300 } },
+};
+
+/** Monotone cubic interpolation through (xs, ys); never overshoots the points. */
+function pchip(xs, ys) {
+  const n = xs.length;
+  const d = [];
+  for (let i = 0; i < n - 1; i++) d.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
+  const m = [d[0]];
+  for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (2 * d[i - 1] * d[i]) / (d[i - 1] + d[i]));
+  m.push(d[n - 2]);
+  return (x) => {
+    let i = 0;
+    while (i < n - 2 && x > xs[i + 1]) i++;
+    const h = xs[i + 1] - xs[i];
+    const t = clamp((x - xs[i]) / h, 0, 1);
+    const t2 = t * t, t3 = t2 * t;
+    return (2 * t3 - 3 * t2 + 1) * ys[i] + (t3 - 2 * t2 + t) * h * m[i]
+      + (-2 * t3 + 3 * t2) * ys[i + 1] + (t3 - t2) * h * m[i + 1];
+  };
+}
+
+/** Silhouette as n+1 points, r as a fraction of the half-width, z from 0 to 1. */
+function formShape(p, n) {
+  const a = clamp(p.bottomOpen / p.width, 0.2, 0.97);
+  const b = clamp(p.topOpen / p.width, 0.15, 0.97);
+  const pts = [];
+  const viaAngle = (psi0, psi1, fn) => {
+    const z0 = fn(psi0)[1], z1 = fn(psi1)[1];
+    for (let i = 0; i <= n; i++) {
+      const [r, z] = fn(lerp(psi0, psi1, i / n));
+      pts.push({ r, z: (z - z0) / (z1 - z0) });
+    }
+  };
+  const viaCurve = (zs, rs) => {
+    const f = pchip(zs, rs);
+    for (let i = 0; i <= n; i++) pts.push({ r: clamp(f(i / n), 0.05, 1), z: i / n });
+  };
+  switch (p.form) {
+    case 'cylinder': viaCurve([0, 1], [1, 1]); break;
+    case 'cone':     viaCurve([0, 1], [1, b]); break;
+    case 'sphere':   viaAngle(-Math.acos(a), Math.acos(b), (s) => [Math.cos(s), Math.sin(s)]); break;
+    case 'dome':     viaAngle(0, Math.acos(b), (s) => [Math.cos(s), Math.sin(s)]); break;
+    case 'disc':     viaAngle(0, Math.acos(b * b), (s) => [Math.sqrt(Math.cos(s)), Math.sqrt(Math.sin(s))]); break;
+    case 'torus':    viaAngle(-1.25, 1.25, (s) => {
+      const z = (Math.sin(s) / Math.sin(1.25) + 1) / 2;
+      const o = lerp(a, b, z);
+      return [o + (1 - o) * (Math.cos(s) - Math.cos(1.25)) / (1 - Math.cos(1.25)), z];
+    }); break;
+    case 'pear':     viaCurve([0, 0.32, 0.72, 1], [a, 1, b + (1 - b) * 0.35, b]); break;
+    case 'bell':     viaCurve([0, 0.1, 0.35, 0.7, 1], [1, b + (1 - b) * 0.55, b + (1 - b) * 0.27, b + (1 - b) * 0.1, b]); break;
+    case 'free':     viaCurve([0, 0.25, 0.5, 0.75, 1], p.free.map((v) => v / 100)); break;
+  }
+  return pts;
+}
+
+/** Silhouette in millimetres with tangents, outward normals and arc length. */
+function profile(p, n) {
+  const R = p.width / 2;
+  const pts = formShape(p, n).map((q) => ({ r: Math.max(q.r * R, p.wall + 4), z: q.z * p.height }));
+  let s = 0;
+  for (let i = 0; i <= n; i++) {
+    const A = pts[Math.max(0, i - 1)], B = pts[Math.min(n, i + 1)];
+    const len = Math.hypot(B.r - A.r, B.z - A.z) || 1;
+    const q = pts[i];
+    q.tr = (B.r - A.r) / len; q.tz = (B.z - A.z) / len;
+    q.nr = q.tz; q.nz = -q.tr;
+    if (i > 0) s += Math.hypot(q.r - pts[i - 1].r, q.z - pts[i - 1].z);
+    q.s = s;
+  }
+  return { pts, L: s };
+}
+
+// ---------- Relief (large pattern) ----------
+
+function reliefWave(p, theta, t) {
+  const n = p.reliefCount;
+  const tw = (p.reliefTwist * Math.PI) / 180;
+  const phase = n * (theta + tw * t);
+  switch (p.relief) {
+    case 'ribs':     return Math.cos(phase);
+    case 'scallops': return 2 * Math.abs(Math.cos(phase / 2)) - 1;
+    case 'pleats':   return (2 / Math.PI) * Math.asin(Math.cos(phase));
+    case 'rings':    return Math.cos(TAU * n * t * 0.5);
+    case 'diamonds': { const k = tw || 2.1; return Math.cos(n * (theta + k * t)) * Math.cos(n * (theta - k * t)); }
+    default:         return 0;
+  }
+}
+
+// ---------- Skin (fine texture) ----------
+
+function hashInt(x, y, z) {
+  let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+function vnoise(x, y, z) {
+  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
+  const fx = x - ix, fy = y - iy, fz = z - iz;
+  const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy), w = fz * fz * (3 - 2 * fz);
+  const h = (a, b, c) => hashInt(ix + a, iy + b, iz + c) / 4294967296;
+  return lerp(
+    lerp(lerp(h(0, 0, 0), h(1, 0, 0), u), lerp(h(0, 1, 0), h(1, 1, 0), u), v),
+    lerp(lerp(h(0, 0, 1), h(1, 0, 1), u), lerp(h(0, 1, 1), h(1, 1, 1), u), v), w);
+}
+
+let F1 = 0, F2 = 0; // nearest and second-nearest cell distances from the last worley() call
+function worley(x, y, z) {
+  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
+  let a = 9, b = 9;
+  for (let dz = -1; dz <= 1; dz++) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const cx = ix + dx, cy = iy + dy, cz = iz + dz;
+    const h = hashInt(cx, cy, cz);
+    const px = cx + (h & 1023) / 1023 - x;
+    const py = cy + ((h >>> 10) & 1023) / 1023 - y;
+    const pz = cz + ((h >>> 20) & 1023) / 1023 - z;
+    const d = px * px + py * py + pz * pz;
+    if (d < a) { b = a; a = d; } else if (d < b) b = d;
+  }
+  F1 = Math.sqrt(a); F2 = Math.sqrt(b);
+}
+
+/** Returns tex(theta, x, y, z, arc) in 0..1, or null when there is no skin. */
+function makeSkin(p) {
+  const sc = p.skinScale;
+  switch (p.skin) {
+    case 'linen': {
+      const pitch = 1.8 * sc;
+      const around = Math.max(8, Math.round((TAU * (p.width / 2) * 0.8) / pitch));
+      return (th, x, y, z, s) => clamp(
+        0.5 + 0.42 * Math.sin(around * th) * Math.sin((TAU * s) / pitch) + 0.3 * (vnoise(x / 6, y / 6, z / (0.7 * sc)) - 0.5), 0, 1);
+    }
+    case 'wood':
+      return (th, x, y, z) => Math.pow(Math.abs(Math.sin(Math.PI * 5 * vnoise(x / (3 * sc), y / (3 * sc), z / (45 * sc)))), 0.7);
+    case 'leather': {
+      const c = 3 * sc;
+      return (th, x, y, z) => { worley(x / c, y / c, z / c); return smooth(0.02, 0.4, F2 - F1); };
+    }
+    case 'hammered': {
+      const c = 11 * sc;
+      return (th, x, y, z) => { worley(x / c, y / c, z / c); return clamp(F1 * F1 * 2.4, 0, 1); };
+    }
+    default: return null;
+  }
+}
+
+// ---------- Mesh building ----------
+
+class MeshBuilder {
+  constructor(S) { this.S = S; this.pos = []; this.idx = []; }
+  ring(at) {
+    const start = this.pos.length / 3;
+    for (let j = 0; j < this.S; j++) {
+      const th = (j / this.S) * TAU;
+      const [r, z] = at(th);
+      this.pos.push(r * Math.cos(th), r * Math.sin(th), z);
+    }
+    return start;
+  }
+  bridge(a, b, skip = null) {
+    const S = this.S;
+    for (let j = 0; j < S; j++) {
+      if (skip && skip(j)) continue;
+      const k = (j + 1) % S;
+      this.idx.push(a + j, a + k, b + k, a + j, b + k, b + j);
+    }
+  }
+  /**
+   * Revolves a closed loop of points around the Z axis. Walk the loop with the
+   * solid on your left (outer wall upward, then inward across the top) and
+   * every face points outward. Sharp points get a doubled ring so edges stay crisp.
+   */
+  revolve(loop, holes = null) {
+    const rin = [], rout = [];
+    for (const q of loop) {
+      const at = q.at || (() => [q.r, q.z]);
+      const a = this.ring(at);
+      rin.push(a);
+      rout.push(q.sharp ? this.ring(at) : a);
+    }
+    // holes: cut-outs through a shell. Cell (i, j) lies between outer loop points i and i+1;
+    // holes.inner[i] is the loop index of the inner-wall point behind outer point i.
+    const innerCell = new Map();
+    if (holes) for (let i = 0; i < holes.inner.length - 1; i++) if (holes.inner[i + 1] >= 0) innerCell.set(holes.inner[i + 1], i);
+    for (let k = 0; k < loop.length; k++) {
+      let skip = null;
+      if (holes && k < holes.rows) skip = (j) => holes.open(k, j);
+      else if (holes && innerCell.has(k)) { const i = innerCell.get(k); skip = (j) => holes.open(i, j); }
+      this.bridge(rout[k], rin[(k + 1) % loop.length], skip);
+    }
+    if (!holes) return;
+    // Wall off the sides of every hole so the shell stays a closed solid.
+    const S = this.S;
+    const quad = (a, b, c, d) => this.idx.push(a, b, c, a, c, d);
+    for (let i = 0; i < holes.rows; i++) {
+      for (let j = 0; j < S; j++) {
+        if (!holes.open(i, j)) continue;
+        const n = (j + 1) % S;
+        const O0 = rin[i], O1 = rin[i + 1], I0 = rin[holes.inner[i]], I1 = rin[holes.inner[i + 1]];
+        if (!holes.open(i - 1, j)) quad(O0 + j, O0 + n, I0 + n, I0 + j);
+        if (!holes.open(i + 1, j)) quad(O1 + j, I1 + j, I1 + n, O1 + n);
+        if (!holes.open(i, (j + S - 1) % S)) quad(O0 + j, I0 + j, I1 + j, O1 + j);
+        if (!holes.open(i, n)) quad(O0 + n, O1 + n, I1 + n, I0 + n);
+      }
+    }
+  }
+  done() { return { positions: new Float32Array(this.pos), indices: new Uint32Array(this.idx) }; }
+}
+
+/**
+ * Trims the inner wall polyline so both ends finish flat at z = 0 and z = H.
+ * `cap` limits how far the wall is extended along its own slope to reach the rim.
+ */
+function clipInner(q, prof, H, cap) {
+  let out = q.slice();
+  const fix = (list, level, endPt, below) => {
+    const outside = (v) => (below ? v.z < level : v.z > level);
+    let k = 0;
+    while (k < list.length - 1 && outside(list[k])) k++;
+    if (k > 0) {
+      const A = list[k - 1], B = list[k];
+      const t = B.z === A.z ? 0 : (level - A.z) / (B.z - A.z);
+      return [{ r: lerp(A.r, B.r, t), z: level, fixed: true }, ...list.slice(k)];
+    }
+    const gap = level - list[0].z;
+    if (Math.abs(gap) > 0.01 && Math.abs(endPt.tz) > 0.2) {
+      // Follow the wall's own slope to the rim so the rim ends flat. On a nearly
+      // horizontal wall that would grow a long thin lip, so stop at the cap and
+      // finish straight up or down instead.
+      const along = clamp(gap / endPt.tz, -cap, cap);
+      const r = Math.max(1.5, list[0].r + endPt.tr * along);
+      const z = list[0].z + endPt.tz * along;
+      const tail = Math.abs(z - level) > 0.01
+        ? [{ r, z: level, fixed: true }, { r, z, fixed: true }]
+        : [{ r, z: level, fixed: true }];
+      return [...tail, ...list];
+    }
+    return list;
+  };
+  out = fix(out, 0, prof.pts[0], true);
+  out = fix(out.reverse(), H, prof.pts[prof.pts.length - 1], false).reverse();
+  return out;
+}
+
+/** Cut-out pattern: returns true where the shade is cut away, given the angle and the distance up the wall. */
+function makeCutout(p) {
+  const size = p.cutSize;
+  const R = p.width / 2;
+  const cols = (pitch) => Math.max(6, 2 * Math.round((TAU * R * 0.85) / pitch / 2));
+  switch (p.cutout) {
+    case 'dots': {
+      const P = size * 1.9, n = cols(P), rowH = P * 0.866;
+      return (th, s) => {
+        const row = Math.round(s / rowH);
+        const u = (th * n) / TAU - (row & 1 ? 0.5 : 0);
+        const du = (u - Math.round(u)) * P, dv = s - row * rowH;
+        return du * du + dv * dv < (size / 2) ** 2;
+      };
+    }
+    case 'slots': {
+      const P = size * 1.7, n = cols(P), len = size * 3, rowH = len + size * 1.4;
+      return (th, s) => {
+        const u = (th * n) / TAU;
+        const col = Math.round(u);
+        const shift = col & 1 ? 0.5 : 0;
+        const dv = Math.max(0, Math.abs(s - (Math.round(s / rowH - shift) + shift) * rowH) - (len / 2 - size / 2));
+        const du = (u - col) * P;
+        return du * du + dv * dv < (size / 2) ** 2;
+      };
+    }
+    case 'lattice': {
+      const P = size * 1.8, n = cols(P);
+      return (th, s) => {
+        const u = (th * n) / TAU, v = s / P;
+        const a = u + v, b = u - v;
+        return Math.abs(a - Math.floor(a) - 0.5) < 0.34 && Math.abs(b - Math.floor(b) - 0.5) < 0.34;
+      };
+    }
+    default: return null;
+  }
+}
+
+function buildShade(p) {
+  const skin = makeSkin(p);
+  const cut = makeCutout(p);
+  const S = skin || cut ? 480 : 240;
+  const n = skin || cut ? 240 : 120;
+  const prof = profile(p, n);
+  const { pts, L } = prof;
+  const H = p.height;
+  const problems = [];
+  const reliefOn = p.relief !== 'none' && p.reliefOn !== 'base' && p.reliefDepth > 0;
+
+  // Patterns ease in away from both rims so the rims stay round and the joints fit.
+  const easeLen = 5 + Math.max(10, 4 * p.reliefDepth);
+  for (const q of pts) {
+    const edge = Math.min(q.s, L - q.s);
+    q.fade = smooth(5, 12, edge);
+    q.reliefFade = smooth(5, easeLen, edge);
+  }
+  const relief = (q, th) => (reliefOn ? p.reliefDepth * reliefWave(p, th, q.s / L) * q.reliefFade : 0);
+
+  const outerAt = (q) => (th) => {
+    let d = relief(q, th);
+    if (skin && q.fade > 0) d += p.skinDepth * q.fade * skin(th, q.r * Math.cos(th), q.r * Math.sin(th), q.z, q.s);
+    return [Math.max(2, q.r + d * q.nr), clamp(q.z + d * q.nz, 0, H)];
+  };
+  const innerAt = (q) => (th) => {
+    const d = relief(q, th) - p.wall;
+    return [Math.max(1, q.r + d * q.nr), clamp(q.z + d * q.nz, 0, H)];
+  };
+
+  const innerRaw = pts.map((q) => ({ r: q.r - p.wall * q.nr, z: q.z - p.wall * q.nz, src: q }));
+  const inner = clipInner(innerRaw, prof, H, 3 * p.wall); // bottom to top
+
+  // How far the wall leans away from vertical (degrees), by third of the height.
+  // Steep leans are overhangs: they print rough without supports.
+  const lean = { bottom: 0, middle: 0, top: 0 };
+  for (const q of pts) {
+    const deg = (Math.atan2(Math.abs(q.tr), Math.max(q.tz, 1e-6)) * 180) / Math.PI;
+    const band = q.z < H / 3 ? 'bottom' : q.z > (2 * H) / 3 ? 'top' : 'middle';
+    lean[band] = Math.max(lean[band], deg);
+  }
+
+  const loop = pts.map((q, i) => ({ at: outerAt(q), sharp: i === 0 || i === n }));
+
+  // Inner wall, walked from the top down.
+  let down = inner.slice().reverse();
+  let ringBuilt = false;
+  if (p.stand === 'pendant') {
+    const holeR = p.holeD / 2;
+    const zu = H - RING_T;
+    const k = down.findIndex((v) => v.z < zu - 0.3);
+    const meet = k > 0
+      ? { r: lerp(down[k - 1].r, down[k].r, (zu - down[k - 1].z) / (down[k].z - down[k - 1].z)), z: zu, fixed: true }
+      : null;
+    const edgeR = meet ? meet.r : down[0].r;
+    if (edgeR - holeR < 4) {
+      problems.push('The top opening is too small for the socket ring. Widen the top or pick a smaller socket.');
+    } else {
+      loop.push({ r: holeR, z: H, sharp: true }, { r: holeR, z: zu, sharp: true });
+      down = meet ? [meet, ...down.slice(k)] : down;
+      ringBuilt = true;
+    }
+  }
+  const step = skin && !cut ? 4 : 1;
+  const innerAtLoop = new Array(n + 1).fill(-1);   // loop index of the inner point behind each outer point
+  down.forEach((v, i) => {
+    const end = i === 0 || i === down.length - 1;
+    if (!end && !v.fixed && i % step !== 0) return;
+    if (!end && !v.fixed) innerAtLoop[pts.indexOf(v.src)] = loop.length;
+    loop.push(v.fixed ? { r: v.r, z: v.z, sharp: true } : { at: innerAt(v.src), sharp: end });
+  });
+
+  let holes = null;
+  if (cut) {
+    // Mark the cells to cut, keeping a solid band at both rims and under a socket ring.
+    const open = new Uint8Array(n * S);
+    const zMax = p.stand === 'pendant' ? H - RING_T - 8 : Infinity;
+    for (let i = 0; i < n; i++) {
+      const a = pts[i], b = pts[i + 1];
+      if (a.s < 14 || L - b.s < 14 || b.z > zMax) continue;
+      if (innerAtLoop[i] < 0 || innerAtLoop[i + 1] !== innerAtLoop[i] - 1) continue;
+      const s = (a.s + b.s) / 2;
+      for (let j = 0; j < S; j++) if (cut(((j + 0.5) / S) * TAU, s)) open[i * S + j] = 1;
+    }
+    // Two holes that only touch at a corner would leave a wall of no thickness: close one.
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 1; i < n; i++) for (let j = 0; j < S; j++) {
+        const jp = (j + S - 1) % S;
+        const A = open[(i - 1) * S + jp], B = open[i * S + j], C = open[(i - 1) * S + j], D = open[i * S + jp];
+        if (A && B && !C && !D) open[i * S + j] = 0;
+        if (C && D && !A && !B) open[i * S + jp] = 0;
+      }
+    }
+    holes = { rows: n, inner: innerAtLoop, open: (i, j) => i >= 0 && i < n && open[i * S + j] === 1 };
+  }
+
+  const mb = new MeshBuilder(S);
+  mb.revolve(loop, holes);
+
+  const slack = reliefOn ? p.reliefDepth : 0;
+  const innerRadiusAt = (z) => {
+    let best = Infinity;
+    for (let i = 0; i < inner.length - 1; i++) {
+      const A = inner[i], B = inner[i + 1];
+      if ((z - A.z) * (z - B.z) <= 0) best = Math.min(best, B.z === A.z ? Math.min(A.r, B.r) : lerp(A.r, B.r, (z - A.z) / (B.z - A.z)));
+    }
+    return best - slack;
+  };
+
+  return {
+    ...mb.done(),
+    problems,
+    ringBuilt,
+    lean,
+    topOuterR: pts[n].r,
+    bottomOuterR: pts[0].r,
+    bottomInnerR: inner[0].r,
+    topInnerR: inner[inner.length - 1].r,
+    innerRadiusAt,
+  };
+}
+
+// ---------- Twist-to-dim drive: a ring with gear teeth inside turns a small gear on a potentiometer ----------
+
+const GEAR_M = 1.5;      // gear module: tooth size, mm of pitch diameter per tooth
+const GEAR_H = 10;       // height of the teeth
+const PINION_H = 10;
+const DISH_H = 10;       // rim on the base that keeps the ring centred
+const DISH_W = 2.4;
+const PRESSURE = (20 * Math.PI) / 180;
+const involute = (a) => Math.tan(a) - a;
+
+/**
+ * Outline of an involute gear as a radius for every angle. `half` is half the
+ * tooth thickness along the pitch circle. A tooth is centred on angle 0.
+ */
+function gearOutline(teeth, rp, rTip, rRoot, half) {
+  const rb = rp * Math.cos(PRESSURE);
+  const lo = Math.max(rb, rRoot);
+  const halfAngle = (r) => half / rp + involute(PRESSURE) - involute(Math.acos(Math.min(1, rb / r)));
+  const atTip = halfAngle(rTip), atLo = halfAngle(lo);
+  const pitch = TAU / teeth;
+  return (theta) => {
+    let d = ((theta % pitch) + pitch) % pitch;
+    if (d > pitch / 2) d = pitch - d;
+    if (d <= atTip) return rTip;
+    if (d >= atLo) return rRoot;
+    let a = lo, b = rTip;
+    for (let i = 0; i < 24; i++) { const mid = (a + b) / 2; if (halfAngle(mid) > d) a = mid; else b = mid; }
+    return (a + b) / 2;
+  };
+}
+
+/** Sizes of the drive, worked out from the socket, the potentiometer and the shade. */
+function dimmerLayout(p, shade) {
+  const k = p.k || 1;
+  const m = GEAR_M;
+  const z1 = p.gearTeeth;
+  const holeR = p.holeD / 2;
+  const bodyR = p.potBodyD / 2;
+  const gap = p.fitGap / k;
+  const problems = [];
+  // The small gear and the potentiometer body both have to clear the lamp holder.
+  const reach = Math.max(holeR + 8 + (m * (z1 + 2)) / 2, holeR + 4 + bodyR);
+  const z2min = z1 + Math.ceil((2 * reach) / m);
+  const Ro = Math.max(shade.bottomOuterR, (m * z2min) / 2 + 1.25 * m + 3);
+  const z2 = Math.floor((2 * (Ro - 3 - 1.25 * m)) / m);
+  const rootR = (m * z2) / 2 + 1.25 * m;
+  const collarW = Math.max(COLLAR_W, 1.2 / k);
+  const rc = shade.bottomInnerR - 0.15 / k;          // snug, so the shade grips the ring
+  const inner = Math.min(rc - collarW, rootR - 1);
+  if (inner < holeR + 6) problems.push('The shade\'s bottom opening is too small to fit around the socket. Widen the bottom opening.');
+  const coneH = rootR - inner;
+  const zTeeth = GEAR_H + 1;
+  return {
+    m, z1, z2, gap, Ro, rootR, rc, inner, coneH, zTeeth, problems,
+    a: (m * (z2 - z1)) / 2,                 // distance from the lamp's centre to the potentiometer
+    top: zTeeth + coneH + 3,                // height of the ring up to where the shade sits
+    twist: (p.potTravel * z1) / z2,         // degrees of shade twist for the full range
+    grew: Ro > shade.bottomOuterR + 0.01,
+  };
+}
+
+function gearPair(p, d) {
+  const k = p.k || 1;
+  const m = d.m;
+  const slack = p.fitGap / k / 2;
+  const r1 = (m * d.z1) / 2, r2 = (m * d.z2) / 2;
+  return {
+    pinion: gearOutline(d.z1, r1, r1 + m, r1 - 1.25 * m, (Math.PI * m) / 4 - slack / 2),
+    // The ring's tooth gaps have the shape of an outer gear's teeth.
+    ring: gearOutline(d.z2, r2, r2 + 1.25 * m, r2 - m, (Math.PI * m) / 4 + slack / 2),
+  };
+}
+
+/** The turn ring: sits in the dish on the base, carries the shade, teeth on the inside. */
+function buildRing(p, shade, d) {
+  const gear = gearPair(p, d).ring;
+  const P = (r, z) => ({ r, z, sharp: true });
+  const top = d.top;
+  const loop = [
+    P(d.Ro, 0), P(d.Ro, top), P(d.rc, top), P(d.rc, top + COLLAR_H), P(d.inner, top + COLLAR_H),
+    P(d.inner, top - 3), P(d.rootR, d.zTeeth),
+    { sharp: true, at: (th) => [gear(th), d.zTeeth] },
+    { sharp: true, at: (th) => [gear(th), 0] },
+  ];
+  const mb = new MeshBuilder(960);
+  mb.revolve(loop);
+  return mb.done();
+}
+
+/** The small gear that pushes onto the potentiometer shaft. Modelled teeth-down, nut pocket at the bottom. */
+function buildPinion(p, d) {
+  const k = p.k || 1;
+  const gear = gearPair(p, d).pinion;
+  const R = p.potShaft === 'd' ? p.potShaftD / 2 + 0.1 / k : p.potShaftD / 2 - 0.05;
+  const flat = p.potShaftD / 4 + 0.1 / k;   // a 6 mm D-shaft is 4.5 mm across the flat
+  const bore = (th) => {
+    if (p.potShaft !== 'd') return R;
+    const c = Math.cos(th);
+    return c > 0 && flat / c < R ? flat / c : R;
+  };
+  const pocketR = p.potBushD * 0.9 + 0.3;   // clears the mounting nut
+  const loop = [
+    { sharp: true, at: (th) => [gear(th), 0] },
+    { sharp: true, at: (th) => [gear(th), PINION_H] },
+    { sharp: true, at: (th) => [bore(th), PINION_H] },
+    { sharp: true, at: (th) => [bore(th), 3] },
+    { r: pocketR, z: 3, sharp: true },
+    { r: pocketR, z: 0, sharp: true },
+  ];
+  const mb = new MeshBuilder(480);
+  mb.revolve(loop);
+  return mb.done();
+}
+
+const CAP_H = 7.4;
+
+/**
+ * A cap for the top of the shade: a disc with a lip that drops into the opening and a
+ * small vent in the middle. Modelled as it prints, flat face down. Null if the opening is too small.
+ */
+function buildCap(p, shade) {
+  const k = p.k || 1;
+  const lip = shade.topInnerR - 0.3 / k;
+  const lipW = Math.max(1.6, 1.2 / k);
+  if (lip - lipW < 8) return null;
+  const P = (r, z) => ({ r, z, sharp: true });
+  const mb = new MeshBuilder(240);
+  mb.revolve([P(shade.topOuterR, 0), P(shade.topOuterR, 2.4), P(lip, 2.4), P(lip, CAP_H), P(lip - lipW, CAP_H), P(lip - lipW, 2.4), P(3, 2.4), P(3, 0)]);
+  return mb.done();
+}
+
+/** A ceiling cup for a pendant: a shallow bowl with a hole for the cord. Modelled as it prints, rim up. */
+function buildCup(p) {
+  const hole = p.cableD / 2 + 0.4;
+  const P = (r, z) => ({ r, z, sharp: true });
+  const mb = new MeshBuilder(240);
+  mb.revolve([P(30, 0), P(50, 30), P(47.6, 30), P(28.6, 2.4), P(hole, 2.4), P(hole, 0)]);
+  return mb.done();
+}
+
+/** d is the twist-to-dim layout from dimmerLayout(), or null for a plain base. */
+function buildBase(p, shade, d = null) {
+  const S = d ? 480 : 240;
+  const problems = [];
+  const Hb = p.baseH;
+  const holeR = p.holeD / 2;
+  // Room under the plate for the socket nut and wiring, and for the potentiometer if there is one.
+  const rcav = d
+    ? Math.max(holeR + 12, d.a + p.potBodyD / 2 + 3)
+    : Math.max(holeR + 12, p.power === 'battery' ? p.batteryD / 2 + 1 : 0);
+  // p.k is the print scale. Thin upright walls and the joint gap are sized so they
+  // are still printable and still fit after the whole model is shrunk by k.
+  const k = p.k || 1;
+  const thin = (x) => Math.max(x, 1.2 / k);
+  const collarW = thin(COLLAR_W);
+  const minR = rcav + thin(3);
+  const dishW = thin(DISH_W);
+  const Rt = Math.max(d ? d.Ro + d.gap + dishW : shade.bottomOuterR + 1.5, minR);
+  // A stem base: a foot, a slim column with a channel for the wire, and a cup under the shade.
+  const stem = p.baseShape === 'stem' && !d;
+  const chan = Math.max(4.5, p.cableD / 2 + 1);
+  const Rf = Math.max(p.baseD / 2, stem ? chan + 6 : minR);
+  const stemR = clamp(p.stemD / 2, chan + 2.4, Math.min(Rf, Rt));
+  const stemAt = (z) => {
+    const down = Math.min(Rf - stemR, Hb * 0.25), up = Math.min(Rt - stemR, Hb * 0.45);
+    return Math.max(lerp(Rf, stemR, smooth(8, 8 + down, z)), lerp(stemR, Rt, smooth(Hb - 3 - up, Hb - 3, z)));
+  };
+  const floorR = stem ? chan + 2 : minR - 1;
+  const reliefOn = p.relief !== 'none' && p.reliefOn !== 'shade' && p.reliefDepth > 0;
+
+  // Cable notch: lifts the bottom edge into a small arch at the back of the base.
+  const notch = p.cable === 'notch' ? p.cableD + 1 : 0;
+  // A push button sits in a taller slot in the side of the base, a quarter turn from the cable.
+  const btn = !d && p.dimmer === 'push' ? p.btnD + 0.4 : 0;
+  const btnH = btn / 2 + 9;
+  if (btn && Hb < 2 * btnH + 14) problems.push(`Make the base at least ${Math.ceil(2 * btnH + 14)} mm tall so the push button fits in its side.`);
+  const lift = (z, arc, width, height) => {
+    const w = 1 - smooth(width / 2, width / 2 + 1.5, arc);
+    return z + height * w * Math.max(0, 1 - z / (2 * height));
+  };
+  const warp = (th, r, z) => {
+    if (notch) z = lift(z, Math.abs(th - Math.PI) * r, notch, notch);
+    if (btn) z = lift(z, Math.abs(th - 1.5 * Math.PI) * r, btn, btnH);
+    return z;
+  };
+  let minSil = Infinity;
+  const P = (r, z) => ({ sharp: true, at: (th) => [r, warp(th, r, z)] });
+
+  const loop = [];
+  const wall = (r, z, sharp) => {
+    minSil = Math.min(minSil, r);
+    const fade = smooth(3, 8, Math.min(z, Hb - z));
+    loop.push({
+      sharp,
+      at: (th) => {
+        const d = reliefOn ? p.reliefDepth * reliefWave(p, th, z / Hb) * fade : 0;
+        const rr = Math.max(floorR, r + d);
+        return [rr, warp(th, rr, z)];
+      },
+    });
+  };
+  const m = 32;
+  if (stem) {
+    for (let i = 0; i <= 64; i++) wall(stemAt((Hb * i) / 64), (Hb * i) / 64, i === 0 || i === 64);
+  } else if (p.baseShape === 'stepped') {
+    const h1 = Hb * 0.45;
+    for (let i = 0; i <= 12; i++) wall(Rf, (h1 * i) / 12, i === 0 || i === 12);
+    for (let i = 0; i <= 12; i++) wall(Rt, h1 + ((Hb - h1) * i) / 12, i === 0 || i === 12);
+  } else {
+    for (let i = 0; i <= m; i++) {
+      const t = i / m;
+      let r = lerp(Rf, Rt, t);
+      if (p.baseShape === 'rounded') r += 0.18 * Math.max(Rf, Rt) * Math.sin(Math.PI * t);
+      if (p.baseShape === 'waisted') r -= 0.55 * (Math.min(Rf, Rt) - minR) * Math.sin(Math.PI * t);
+      wall(Math.max(r, minR), t * Hb, i === 0 || i === m);
+    }
+  }
+
+  // Collar that the shade drops over.
+  let collar = false;
+  if (d) {
+    // A raised rim forms a dish that the turn ring sits in.
+    loop.push(P(Rt, Hb + DISH_H), P(Rt - dishW, Hb + DISH_H), P(Rt - dishW, Hb));
+  } else if (p.joint !== 'fused') {
+    const rc = shade.bottomInnerR - (p.joint === 'snug' ? 0.15 : 0.4) / k;
+    if (rc - collarW > holeR + 1.5) {
+      loop.push(P(rc, Hb), P(rc, Hb + COLLAR_H), P(rc - collarW, Hb + COLLAR_H), P(rc - collarW, Hb));
+      collar = true;
+    } else {
+      problems.push('The shade\'s bottom opening is too small to fit over the socket. Widen the bottom opening.');
+    }
+  }
+
+  // Socket hole, a short flat seat for the nut, then a 45° ceiling that prints without supports.
+  if (d) {
+    // The socket hole grows a slot out to the potentiometer, which bolts through its end.
+    // Around the slot the ceiling stays flat so the potentiometer body fits under the plate.
+    const zc = Hb - 3;
+    const a = d.a;
+    const w = p.potBushD / 2 + 0.2 / k;
+    const bodyR = p.potBodyD / 2 + 2;
+    const hole = (th) => {
+      const c = Math.cos(th), s = Math.abs(Math.sin(th));
+      if (c <= 0) return holeR;
+      return Math.max(holeR, a * s <= w ? a * c + Math.sqrt(w * w - a * a * s * s) : w / s);
+    };
+    const flat = (th) => {
+      const c = Math.cos(th), s = Math.abs(Math.sin(th));
+      const far = c > 0 && a * s <= bodyR ? a * c + Math.sqrt(bodyR * bodyR - a * a * s * s) : 0;
+      return Math.min(Math.max(hole(th) + 4, far), rcav - 0.5);
+    };
+    loop.push(
+      { sharp: true, at: (th) => [hole(th), Hb] },
+      { sharp: true, at: (th) => [hole(th), zc] },
+      { sharp: true, at: (th) => [flat(th), zc] },
+      { sharp: true, at: (th) => [rcav, warp(th, rcav, Math.max(1, zc - (rcav - flat(th))))] },
+      P(rcav, 0),
+    );
+  } else {
+    const zc = Hb - PLATE_T;
+    // A push button or touch sensor needs a thin patch of wall: a pocket cut from the inside.
+    const pocketR = minSil - (reliefOn ? p.reliefDepth : 0) - 2;
+    const pocketW = p.dimmer === 'push' ? btn / 2 + 4 : p.dimmer === 'touch' ? 10 : 0;
+    const pocket = pocketW > 0 && pocketR > rcav + 1;
+    const cav = (th) => (pocket && Math.abs(th - 1.5 * Math.PI) * pocketR <= pocketW ? pocketR : rcav);
+    loop.push(P(holeR, Hb), P(holeR, zc), P(holeR + 4, zc));
+    if (stem) {
+      // The hollow follows the outside: a cup for the lamp holder, a wire channel down the stem, room in the foot.
+      const margin = 3 + (reliefOn ? p.reliefDepth : 0);
+      for (let i = 1; i <= 48; i++) {
+        const z = zc * (1 - i / 48);
+        const r = Math.max(chan, Math.min(rcav, stemAt(z) - margin, holeR + 4 + (zc - z)));
+        loop.push({ sharp: i === 48, at: (th) => [r, warp(th, r, z)] });
+      }
+      if (pocketW) problems.push('A stem is too slim to hold a push button or touch sensor. Pick another base silhouette for those.');
+    } else {
+      loop.push(
+        { sharp: true, at: (th) => [cav(th), warp(th, cav(th), Math.max(2, zc - (cav(th) - holeR - 4)))] },
+        { sharp: true, at: (th) => [cav(th), warp(th, cav(th), 0)] },
+      );
+    }
+  }
+
+  const mb = new MeshBuilder(S);
+  mb.revolve(loop);
+  return { ...mb.done(), problems, collar, topR: Rt, footR: Rf };
+}
+
+// ---------- Bulbs ----------
+
+/** Bulb radius at distance x from the bottom of its cap. */
+function bulbRadiusAt(bulb, x) {
+  const R = bulb.d / 2;
+  const rc = Math.min(bulb.capD / 2, R);
+  const capLen = bulb.kind === 'spot' ? 8 : Math.min(25, bulb.l * 0.25);
+  if (x <= capLen) return rc;
+  const g = clamp((x - capLen) / (bulb.l - capLen), 0, 1);
+  if (bulb.kind === 'spot') return lerp(rc, R, Math.min(1, g * 1.3));
+  if (bulb.kind === 'tube') {
+    if (g < 0.12) return lerp(rc, R, smooth(0, 0.12, g));
+    return g > 0.85 ? R * Math.sqrt(Math.max(0, 1 - ((g - 0.85) / 0.15) ** 2)) : R;
+  }
+  const c = { a: 0.6, globe: 0.5, candle: 0.4 }[bulb.kind] ?? 0.6;
+  if (g < c) {
+    return bulb.kind === 'globe'
+      ? Math.max(rc, R * Math.sqrt(1 - ((c - g) / c) ** 2))
+      : lerp(rc, R, smooth(0, 1, g / c));
+  }
+  const t = (g - c) / (1 - c);
+  return bulb.kind === 'candle' ? R * (1 - t ** 1.6) : R * Math.sqrt(Math.max(0, 1 - t * t));
+}
+
+// ---------- Mesh utilities ----------
+
+function meshVolume({ positions: P, indices: I }) {
+  let v = 0;
+  for (let i = 0; i < I.length; i += 3) {
+    const a = I[i] * 3, b = I[i + 1] * 3, c = I[i + 2] * 3;
+    v += P[a] * (P[b + 1] * P[c + 2] - P[b + 2] * P[c + 1])
+       - P[a + 1] * (P[b] * P[c + 2] - P[b + 2] * P[c])
+       + P[a + 2] * (P[b] * P[c + 1] - P[b + 1] * P[c]);
+  }
+  return v / 6;
+}
+
+/** Moves a mesh; flipH mirrors it top-to-bottom within that height (and fixes winding). */
+function place(mesh, { flipH = null, dx = 0, dz = 0 } = {}) {
+  const positions = new Float32Array(mesh.positions);
+  const indices = new Uint32Array(mesh.indices);
+  for (let i = 0; i < positions.length; i += 3) {
+    positions[i] += dx;
+    positions[i + 2] = (flipH === null ? positions[i + 2] : flipH - positions[i + 2]) + dz;
+  }
+  if (flipH !== null) for (let i = 0; i < indices.length; i += 3) { const t = indices[i + 1]; indices[i + 1] = indices[i + 2]; indices[i + 2] = t; }
+  return { positions, indices };
+}
+
+/** A copy of the mesh shrunk (or grown) by factor k about the origin. */
+function scaled(mesh, k) {
+  const positions = new Float32Array(mesh.positions.length);
+  for (let i = 0; i < positions.length; i++) positions[i] = mesh.positions[i] * k;
+  return { positions, indices: mesh.indices };
+}
+
+function merge(meshes) {
+  const positions = new Float32Array(meshes.reduce((s, m) => s + m.positions.length, 0));
+  const indices = new Uint32Array(meshes.reduce((s, m) => s + m.indices.length, 0));
+  let po = 0, io = 0;
+  for (const m of meshes) {
+    positions.set(m.positions, po);
+    for (let i = 0; i < m.indices.length; i++) indices[io + i] = m.indices[i] + po / 3;
+    po += m.positions.length; io += m.indices.length;
+  }
+  return { positions, indices };
+}
+
+/** Joins vertices that share a position and drops collapsed triangles. */
+function weld({ positions: P, indices: I }) {
+  const map = new Map();
+  const remap = new Uint32Array(P.length / 3);
+  const out = [];
+  for (let i = 0; i < P.length; i += 3) {
+    const key = `${Math.round(P[i] * 1e3)},${Math.round(P[i + 1] * 1e3)},${Math.round(P[i + 2] * 1e3)}`;
+    let id = map.get(key);
+    if (id === undefined) { id = out.length / 3; map.set(key, id); out.push(P[i], P[i + 1], P[i + 2]); }
+    remap[i / 3] = id;
+  }
+  const idx = [];
+  for (let i = 0; i < I.length; i += 3) {
+    const a = remap[I[i]], b = remap[I[i + 1]], c = remap[I[i + 2]];
+    if (a !== b && b !== c && a !== c) idx.push(a, b, c);
+  }
+  return { positions: new Float32Array(out), indices: new Uint32Array(idx) };
+}
+
+// ---------- File export ----------
+
+function toSTL({ positions: P, indices: I }) {
+  const tris = I.length / 3;
+  const buf = new ArrayBuffer(84 + tris * 50);
+  const dv = new DataView(buf);
+  dv.setUint32(80, tris, true);
+  let o = 84;
+  for (let i = 0; i < I.length; i += 3) {
+    const a = I[i] * 3, b = I[i + 1] * 3, c = I[i + 2] * 3;
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+    const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const len = Math.hypot(nx, ny, nz) || 1;
+    dv.setFloat32(o, nx / len, true); dv.setFloat32(o + 4, ny / len, true); dv.setFloat32(o + 8, nz / len, true);
+    o += 12;
+    for (const k of [a, b, c]) {
+      dv.setFloat32(o, P[k], true); dv.setFloat32(o + 4, P[k + 1], true); dv.setFloat32(o + 8, P[k + 2], true);
+      o += 12;
+    }
+    o += 2;
+  }
+  return new Blob([buf], { type: 'model/stl' });
+}
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8) {
+  let c = 0xffffffff;
+  for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+async function deflateRaw(u8) {
+  const stream = new Blob([u8]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function zip(files) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name);
+    const raw = enc.encode(f.text);
+    const data = await deflateRaw(raw);
+    const crc = crc32(raw);
+    const head = new DataView(new ArrayBuffer(30));
+    head.setUint32(0, 0x04034b50, true); head.setUint16(4, 20, true); head.setUint16(8, 8, true);
+    head.setUint16(12, 33, true); head.setUint32(14, crc, true);
+    head.setUint32(18, data.length, true); head.setUint32(22, raw.length, true); head.setUint16(26, name.length, true);
+    chunks.push(head.buffer, name, data);
+    const cd = new DataView(new ArrayBuffer(46));
+    cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 20, true); cd.setUint16(6, 20, true); cd.setUint16(10, 8, true);
+    cd.setUint16(14, 33, true); cd.setUint32(16, crc, true);
+    cd.setUint32(20, data.length, true); cd.setUint32(24, raw.length, true); cd.setUint16(28, name.length, true);
+    cd.setUint32(42, offset, true);
+    central.push(cd.buffer, name);
+    offset += 30 + name.length + data.length;
+  }
+  const cdSize = central.reduce((s, c) => s + c.byteLength, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...chunks, ...central, end.buffer], { type: 'model/3mf' });
+}
+
+/** parts: [{ name, mesh }]; each becomes its own object, laid out side by side. */
+async function to3MF(parts) {
+  const xml = ['<?xml version="1.0" encoding="UTF-8"?>\n',
+    '<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n<resources>\n'];
+  const items = [];
+  let x = 0;
+  parts.forEach((part, n) => {
+    const { positions: P, indices: I } = weld(part.mesh);
+    let minX = Infinity, maxX = -Infinity;
+    for (let i = 0; i < P.length; i += 3) { minX = Math.min(minX, P[i]); maxX = Math.max(maxX, P[i]); }
+    xml.push(`<object id="${n + 1}" type="model" name="${part.name}"><mesh><vertices>\n`);
+    const rows = [];
+    for (let i = 0; i < P.length; i += 3) rows.push(`<vertex x="${+P[i].toFixed(4)}" y="${+P[i + 1].toFixed(4)}" z="${+P[i + 2].toFixed(4)}"/>`);
+    xml.push(rows.join('\n'), '\n</vertices><triangles>\n');
+    const tris = [];
+    for (let i = 0; i < I.length; i += 3) tris.push(`<triangle v1="${I[i]}" v2="${I[i + 1]}" v3="${I[i + 2]}"/>`);
+    xml.push(tris.join('\n'), '\n</triangles></mesh></object>\n');
+    const tx = x - minX;
+    items.push(`<item objectid="${n + 1}" transform="1 0 0 0 1 0 0 0 1 ${tx.toFixed(3)} 0 0"/>`);
+    x += maxX - minX + 10;
+  });
+  xml.push('</resources>\n<build>\n', items.join('\n'), '\n</build>\n</model>\n');
+  return zip([
+    { name: '[Content_Types].xml', text: '<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>' },
+    { name: '_rels/.rels', text: '<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>' },
+    { name: '3D/3dmodel.model', text: xml.join('') },
+  ]);
+}
+
+return { RING_T, PLATE_T, COLLAR_H, COLLAR_W, FORMS, formShape, reliefWave, buildShade, GEAR_M, GEAR_H, PINION_H, DISH_H, dimmerLayout, buildRing, buildPinion, CAP_H, buildCap, buildCup, buildBase, bulbRadiusAt, meshVolume, place, scaled, merge, weld, toSTL, to3MF };
+})();
+
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+const { FORMS, RING_T, PINION_H, formShape, buildShade, buildBase, bulbRadiusAt, dimmerLayout, buildRing, buildPinion, buildCup, buildCap, CAP_H, meshVolume, place, scaled, merge, weld, toSTL, to3MF } = geometryModule;
+
+// ---------- Catalogues ----------
+
+const STEPS = [
+  { id: 'shade',   name: 'Shade',   desc: 'Shade silhouette, dimensions and wall' },
+  { id: 'surface', name: 'Surface', desc: 'One relief for shade, base or both' },
+  { id: 'skin',    name: 'Skin',    desc: 'Fine outside texture: leather, linen, wood…' },
+  { id: 'bulb',    name: 'Bulb',    desc: 'Socket type, lamp specs and emitter geometry' },
+  { id: 'base',    name: 'Base',    desc: 'Base silhouette, joint and cable routing' },
+  { id: 'make',    name: 'Make',    desc: 'Preview surface summary and 3MF/STL export' },
+  { id: 'build',   name: 'Build',   desc: 'Shopping list and how to put it together' },
+];
+
+// Density in g/cm³; price is a rough figure per kilogram; maxW is the LED power it tolerates in a closed shade.
+const MATERIALS = {
+  pla:  { label: 'PLA',        density: 1.24, price: 22, maxW: 10 },
+  petg: { label: 'PETG',       density: 1.27, price: 24, maxW: 15 },
+  abs:  { label: 'ABS or ASA', density: 1.05, price: 26, maxW: 15 },
+};
+
+// hole: typical mounting hole for the lamp holder, capD: bulb cap diameter (mm)
+const SOCKETS = {
+  e27:  { label: 'E27 screw (Europe)',        hole: 40,   capD: 27 },
+  e26:  { label: 'E26 screw (North America)', hole: 40,   capD: 26 },
+  e14:  { label: 'E14 small screw',           hole: 28.5, capD: 14 },
+  e12:  { label: 'E12 candelabra',            hole: 28.5, capD: 12 },
+  b22:  { label: 'B22 bayonet',               hole: 29,   capD: 22 },
+  gu10: { label: 'GU10 spot',                 hole: 35,   capD: 20 },
+};
+
+const BULBS = {
+  a60:    { label: 'A60 / A19 classic', d: 60,  l: 108, kind: 'a' },
+  g95:    { label: 'G95 globe',         d: 95,  l: 138, kind: 'globe' },
+  g125:   { label: 'G125 large globe',  d: 125, l: 173, kind: 'globe' },
+  st64:   { label: 'ST64 Edison',       d: 64,  l: 142, kind: 'a' },
+  c35:    { label: 'C35 candle',        d: 35,  l: 100, kind: 'candle', socket: 'e14' },
+  t45:    { label: 'T45 tube',          d: 45,  l: 112, kind: 'tube' },
+  gu10:   { label: 'GU10 spot',         d: 50,  l: 56,  kind: 'spot',   socket: 'gu10' },
+  custom: { label: 'Custom size' },
+};
+
+const RELIEF_DEFAULTS = {
+  ribs:     { reliefCount: 12, reliefDepth: 5, reliefTwist: 90 },
+  scallops: { reliefCount: 10, reliefDepth: 5, reliefTwist: 0 },
+  pleats:   { reliefCount: 24, reliefDepth: 4, reliefTwist: 0 },
+  rings:    { reliefCount: 12, reliefDepth: 4, reliefTwist: 0 },
+  diamonds: { reliefCount: 8,  reliefDepth: 4, reliefTwist: 120 },
+};
+
+const BED = 256;           // common print bed, mm
+const PLA_DENSITY = 1.24;  // g/cm³
+const LIFT = 140;          // how high a pendant hangs above the grid in the preview
+const SOCKET_RISE = 10;    // table: bulb cap starts this far above the base plate
+const SOCKET_DROP = 25;    // pendant: bulb cap starts this far below the ring
+
+const state = {
+  form: 'pear', ...FORMS.pear.defaults, wall: 1.6, free: [60, 100, 72, 85, 45],
+  relief: 'ribs', ...RELIEF_DEFAULTS.ribs, reliefOn: 'shade',
+  skin: 'none', skinDepth: 0.5, skinScale: 1,
+  socket: 'e27', bulb: 'a60', bulbD: 60, bulbL: 108, bulbKind: 'a', watts: 8, holeD: 40,
+  stand: 'table', baseShape: 'waisted', baseD: 150, baseH: 60, joint: 'loose', cable: 'notch', cableD: 6.5,
+  color: '#f2e9dc', baseColor: '#3b3f46', lit: true,
+  printScale: 100,
+  // Twist-to-dim: typical 16-17 mm panel potentiometer with a 6 mm shaft
+  showShade: true,
+  showWall: false,
+  name: 'Untitled lamp',
+  cutout: 'none', cutSize: 8,
+  cap: 'open', power: 'plug', batteryD: 60, btnD: 12, stemD: 28,
+  bed: '256', nozzle: '0.4', material: 'pla',
+  dimmer: 'none', gearTeeth: 16, potShaft: 'd', potShaftD: 6, potBushD: 7, potBodyD: 17, potTravel: 300, fitGap: 0.3,
+};
+
+const DEFAULTS = structuredClone(state);
+const STORE_KEY = 'lampwright-design';
+
+/** Keeps the design in the browser so a reload does not lose it. */
+function saveDesign() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* no storage: the design just is not kept */ }
+}
+
+/** Restores a saved design, ignoring anything that no longer makes sense. */
+function loadDesign() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY)); } catch { /* nothing usable stored */ }
+  // The single-file copy can carry a starting design for its first run.
+  if (!saved || typeof saved !== 'object') saved = window.LAMPWRIGHT_START;
+  if (!saved || typeof saved !== 'object') return;
+  applyDesign(saved);
+}
+
+/** Replaces the current design with a saved one, ignoring anything that no longer makes sense. */
+function applyDesign(saved) {
+  Object.assign(state, structuredClone(DEFAULTS));
+  for (const key of Object.keys(DEFAULTS)) {
+    const fallback = DEFAULTS[key], value = saved[key];
+    if (Array.isArray(fallback)) {
+      if (Array.isArray(value) && value.length === fallback.length && value.every(Number.isFinite)) state[key] = value;
+    } else if (typeof value === typeof fallback && (typeof value !== 'number' || Number.isFinite(value))) {
+      state[key] = value;
+    }
+  }
+  for (const def of SELECTS) if (!def.options.some(([v]) => v === state[def.id])) state[def.id] = DEFAULTS[def.id];
+  for (const def of SLIDERS) if (!def.get) state[def.id] = Math.min(def.max, Math.max(def.min, state[def.id]));
+  state.free = state.free.map((v) => Math.min(100, Math.max(15, v)));
+  if (!FORMS[state.form]) state.form = DEFAULTS.form;
+  if (!['a', 'globe', 'candle', 'tube', 'spot'].includes(state.bulbKind)) state.bulbKind = DEFAULTS.bulbKind;
+  state.name = state.name.trim().slice(0, 40) || DEFAULTS.name;
+}
+
+const isTable = () => state.stand === 'table';
+const hasDimmer = () => isTable() && state.dimmer === 'gear';
+const scaleK = () => state.printScale / 100;
+
+/**
+ * The settings the geometry is built from. For a scaled-down print the model is
+ * built with a thicker wall and then shrunk, so the printed wall stays what was asked for.
+ */
+function params(k = scaleK()) {
+  const wall = k < 1 ? Math.min(state.wall / k, state.width * 0.12) : state.wall;
+  // A battery lamp has no cord, so no cable notch.
+  const cable = isTable() && state.power === 'battery' ? 'none' : state.cable;
+  return { ...state, k, wall, cable };
+}
+const usesOpening = (which) => FORMS[state.form].uses.includes(which);
+const hasRelief = () => state.relief !== 'none';
+
+// ---------- Control definitions ----------
+
+const SLIDERS = [
+  { id: 'topOpen',     group: 'shade-controls',   label: 'Top opening',     min: 40, max: 300, step: 1, unit: 'mm', show: () => usesOpening('top') },
+  { id: 'bottomOpen',  group: 'shade-controls',   label: 'Bottom opening',  min: 40, max: 300, step: 1, unit: 'mm', show: () => usesOpening('bottom') },
+  ...['Bottom', 'Lower', 'Middle', 'Upper', 'Top'].map((name, i) => ({
+    id: `free${i}`, group: 'shade-controls', label: `${name} width`, min: 15, max: 100, step: 1, unit: '%',
+    show: () => state.form === 'free', get: () => state.free[i], set: (v) => { state.free[i] = v; },
+  })),
+  { id: 'height',      group: 'dim-controls',     label: 'Shade height',    min: 60,  max: 320, step: 1,   unit: 'mm' },
+  { id: 'width',       group: 'dim-controls',     label: 'Shade width',     min: 80,  max: 320, step: 1,   unit: 'mm' },
+  { id: 'wall',        group: 'dim-controls',     label: 'Wall thickness',  min: 0.8, max: 4,   step: 0.1, unit: 'mm' },
+  { id: 'reliefCount', group: 'surface-controls', label: 'Count',           min: 2,   max: 32,  step: 1,   unit: '',   show: hasRelief },
+  { id: 'reliefDepth', group: 'surface-controls', label: 'Depth',           min: 0.5, max: 12,  step: 0.5, unit: 'mm', show: hasRelief },
+  { id: 'reliefTwist', group: 'surface-controls', label: 'Twist',           min: -360, max: 360, step: 5,  unit: '°',  show: () => hasRelief() && state.relief !== 'rings' },
+  { id: 'skinDepth',   group: 'skin-controls',    label: 'Texture depth',   min: 0.2, max: 1.2, step: 0.1, unit: 'mm', show: () => state.skin !== 'none' },
+  { id: 'skinScale',   group: 'skin-controls',    label: 'Texture scale',   min: 0.5, max: 2.5, step: 0.1, unit: '×',  show: () => state.skin !== 'none' },
+  { id: 'bulbD',       group: 'bulb-controls',    label: 'Bulb diameter',   min: 20,  max: 150, step: 1,   unit: 'mm', after: () => { state.bulb = 'custom'; } },
+  { id: 'bulbL',       group: 'bulb-controls',    label: 'Bulb length',     min: 40,  max: 220, step: 1,   unit: 'mm', after: () => { state.bulb = 'custom'; } },
+  { id: 'watts',       group: 'bulb-controls',    label: 'LED power',       min: 2,   max: 15,  step: 1,   unit: 'W' },
+  { id: 'holeD',       group: 'bulb-controls',    label: 'Socket hole',     min: 20,  max: 60,  step: 0.5, unit: 'mm' },
+  { id: 'baseD',       group: 'base-controls',    label: 'Foot diameter',   min: 60,  max: 300, step: 1,   unit: 'mm', show: isTable },
+  { id: 'baseH',       group: 'base-controls',    label: 'Base height',     min: 35,  max: 320, step: 1,   unit: 'mm', show: isTable },
+  { id: 'stemD',       group: 'base-controls',    label: 'Stem thickness',  min: 16,  max: 70,  step: 1,   unit: 'mm', show: () => isTable() && state.baseShape === 'stem' },
+  { id: 'cableD',      group: 'base-controls-2',  label: 'Cable diameter',  min: 4,   max: 9,   step: 0.5, unit: 'mm', show: () => isTable() && state.cable === 'notch' && state.power !== 'battery' },
+  { id: 'printScale',  group: 'make-controls',    label: 'Print scale',     min: 20,  max: 100, step: 5,   unit: '%' },
+  { id: 'cutSize',     group: 'cut-controls',     label: 'Hole size',       min: 4,   max: 18,  step: 0.5, unit: 'mm', show: () => state.cutout !== 'none' },
+  { id: 'batteryD',    group: 'base-controls-2',  label: 'Battery space',   min: 40,  max: 120, step: 1,   unit: 'mm', show: () => isTable() && state.power === 'battery' },
+  { id: 'btnD',        group: 'dimmer-controls',  label: 'Button thread',   min: 10,  max: 22,  step: 0.5, unit: 'mm', show: () => isTable() && state.dimmer === 'push' },
+  { id: 'gearTeeth',   group: 'dimmer-controls',  label: 'Small gear teeth', min: 14, max: 30,  step: 1,   unit: '',   show: hasDimmer },
+  { id: 'potShaftD',   group: 'dimmer-controls',  label: 'Shaft diameter',  min: 4,   max: 8,   step: 0.5, unit: 'mm', show: hasDimmer },
+  { id: 'potBushD',    group: 'dimmer-controls',  label: 'Mounting thread', min: 6,   max: 12,  step: 0.5, unit: 'mm', show: hasDimmer },
+  { id: 'potBodyD',    group: 'dimmer-controls',  label: 'Body diameter',   min: 12,  max: 30,  step: 1,   unit: 'mm', show: hasDimmer },
+  { id: 'potTravel',   group: 'dimmer-controls',  label: 'Knob travel',     min: 200, max: 320, step: 10,  unit: '°',  show: hasDimmer },
+  { id: 'fitGap',      group: 'dimmer-controls',  label: 'Fit gap',         min: 0.2, max: 0.6, step: 0.05, unit: 'mm', show: hasDimmer },
+];
+
+const SELECTS = [
+  { id: 'relief', group: 'surface-selects', label: 'Relief',
+    options: [['none', 'None'], ['ribs', 'Ribs'], ['scallops', 'Scallops'], ['pleats', 'Pleats'], ['rings', 'Rings'], ['diamonds', 'Diamonds']],
+    after: (v) => Object.assign(state, RELIEF_DEFAULTS[v] || {}) },
+  { id: 'reliefOn', group: 'surface-selects', label: 'Apply to', show: hasRelief,
+    options: [['shade', 'Shade'], ['base', 'Base'], ['both', 'Shade and base']] },
+  { id: 'skin', group: 'skin-selects', label: 'Skin',
+    options: [['none', 'Smooth (none)'], ['leather', 'Leather'], ['linen', 'Linen'], ['wood', 'Wood grain'], ['hammered', 'Hammered']] },
+  { id: 'socket', group: 'bulb-selects', label: 'Socket',
+    options: Object.entries(SOCKETS).map(([k, s]) => [k, s.label]),
+    after: (v) => { state.holeD = SOCKETS[v].hole; } },
+  { id: 'bulb', group: 'bulb-selects', label: 'Bulb shape',
+    options: Object.entries(BULBS).map(([k, b]) => [k, b.label]),
+    after: (v) => {
+      const b = BULBS[v];
+      if (!b.d) return;
+      Object.assign(state, { bulbD: b.d, bulbL: b.l, bulbKind: b.kind });
+      if (b.socket) { state.socket = b.socket; state.holeD = SOCKETS[b.socket].hole; }
+    } },
+  { id: 'stand', group: 'base-selects', label: 'How it stands',
+    options: [['table', 'Table lamp on a base'], ['pendant', 'Pendant, hangs from cable']] },
+  { id: 'baseShape', group: 'base-selects', label: 'Base silhouette', show: isTable,
+    options: [['straight', 'Straight'], ['rounded', 'Rounded'], ['waisted', 'Waisted'], ['stepped', 'Stepped'], ['stem', 'Stem']] },
+  { id: 'cutout', group: 'cut-selects', label: 'Cut-outs',
+    options: [['none', 'None'], ['dots', 'Dots'], ['slots', 'Slots'], ['lattice', 'Lattice']] },
+  { id: 'bed', group: 'make-selects', label: 'Print bed',
+    options: [['180', '180 mm'], ['220', '220 mm'], ['235', '235 mm'], ['256', '256 mm'], ['300', '300 mm'], ['350', '350 mm']] },
+  { id: 'nozzle', group: 'make-selects', label: 'Nozzle',
+    options: [['0.4', '0.4 mm'], ['0.6', '0.6 mm']] },
+  { id: 'material', group: 'make-selects', label: 'Plastic',
+    options: Object.entries(MATERIALS).map(([k, m]) => [k, m.label]) },
+  { id: 'cap', group: 'shade-selects', label: 'Top of the shade', show: isTable,
+    options: [['open', 'Open'], ['cap', 'Closed with a cap']] },
+  { id: 'power', group: 'dimmer-selects', label: 'Power', show: isTable,
+    options: [['plug', 'Plug-in'], ['battery', 'Battery (cordless)']] },
+  { id: 'dimmer', group: 'dimmer-selects', label: 'Switched by', show: isTable,
+    options: [['none', 'Nothing built in'],['gear', 'Twisting the shade (dims)'], ['push', 'A push button'], ['touch', 'A touch sensor']] },
+  { id: 'potShaft', group: 'dimmer-selects', label: 'Potentiometer shaft', show: hasDimmer,
+    options: [['d', 'D-shaped (one flat)'], ['round', 'Round or knurled']] },
+  { id: 'joint', group: 'base-selects-2', label: 'Joint', show: () => isTable() && !hasDimmer(),
+    options: [['loose', 'Lift-off collar'], ['snug', 'Press-fit collar'], ['fused', 'One piece']] },
+  { id: 'cable', group: 'base-selects-2', label: 'Cable routing', show: () => isTable() && state.power !== 'battery',
+    options: [['notch', 'Notch under back edge'], ['none', 'None (drill your own)']] },
+];
+
+// ---------- Scene ----------
+
+const canvas = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+const scene = new THREE.Scene();
+// A photo studio: one seamless backdrop that the floor fades into.
+const DAY = new THREE.Color(0xd6d5d1);
+const NIGHT = new THREE.Color(0x171615);
+scene.background = DAY.clone();
+scene.fog = new THREE.Fog(DAY.clone(), 1300, 3400);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const camera = new THREE.PerspectiveCamera(40, 1, 1, 6000);
+camera.position.set(380, 300, 460);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.95;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0xb9b7b0, 1);
+scene.add(hemi);
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.set(260, 560, 320);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.radius = 7;
+key.shadow.normalBias = 1.5;
+Object.assign(key.shadow.camera, { left: -420, right: 420, top: 420, bottom: -420, near: 50, far: 1600 });
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xdfe6ff, 0.5);
+fill.position.set(-300, 150, -200);
+scene.add(fill);
+
+const floorMat = new THREE.MeshStandardMaterial({ color: DAY.clone(), roughness: 0.96 });
+const floor = new THREE.Mesh(new THREE.CircleGeometry(4200, 64), floorMat);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// Outline of a 256 mm print bed, for scale.
+const bedMat = new THREE.LineBasicMaterial({ color: 0x16181b, transparent: true, opacity: 0.22 });
+const h = BED / 2;
+const bedLine = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(
+  [[-h, -h], [h, -h], [h, h], [-h, h]].map(([x, z]) => new THREE.Vector3(x, 0.4, z))), bedMat);
+scene.add(bedLine);
+
+// Model space is Z-up; the viewer is Y-up.
+const lamp = new THREE.Group();
+lamp.rotation.x = -Math.PI / 2;
+scene.add(lamp);
+
+const shadeMat = new THREE.MeshStandardMaterial({ roughness: 0.62 });
+const baseMat = new THREE.MeshStandardMaterial({ roughness: 0.5 });
+const shadeMesh = new THREE.Mesh(new THREE.BufferGeometry(), shadeMat);
+const baseMesh = new THREE.Mesh(new THREE.BufferGeometry(), baseMat);
+const gearMat = new THREE.MeshStandardMaterial({ color: 0x2f9e8f, roughness: 0.5 });
+const ringMesh = new THREE.Mesh(new THREE.BufferGeometry(), baseMat);
+const pinionMesh = new THREE.Mesh(new THREE.BufferGeometry(), gearMat);
+lamp.add(shadeMesh, baseMesh, ringMesh, pinionMesh);
+const cupMesh = new THREE.Mesh(new THREE.BufferGeometry(), baseMat);
+const capMesh = new THREE.Mesh(new THREE.BufferGeometry(), shadeMat);
+capMesh.castShadow = true;
+lamp.add(cupMesh, capMesh);
+for (const m of [shadeMesh, baseMesh, ringMesh, pinionMesh]) m.castShadow = true;
+
+// A wall behind the lamp, to see the light and shadow the shade throws.
+const wallMat = new THREE.MeshStandardMaterial({ color: DAY.clone(), roughness: 0.96 });
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(4000, 2400), wallMat);
+wall.position.set(0, 1200, -330);
+wall.receiveShadow = true;
+wall.visible = false;
+scene.add(wall);
+
+const bulbMat = new THREE.MeshStandardMaterial({ color: 0xfff4e0, roughness: 0.3, emissive: 0xffc98a });
+const bulbMesh = new THREE.Mesh(new THREE.BufferGeometry(), bulbMat);
+scene.add(bulbMesh);
+const glow = new THREE.PointLight(0xffb878, 0, 0, 1.6);
+glow.shadow.mapSize.set(1024, 1024);
+glow.shadow.camera.near = 4;
+glow.shadow.camera.far = 3000;
+glow.shadow.bias = -0.003;
+scene.add(glow);
+const cord = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 400, 12), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+scene.add(cord);
+
+function toGeometry(mesh) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
+  g.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+  g.computeVertexNormals();
+  return g;
+}
+function swap(target, geometry) { target.geometry.dispose(); target.geometry = geometry; }
+
+// ---------- Model ----------
+
+let shade = null;      // as it will be printed (thicker wall when the print is scaled down)
+let base = null;
+let fullShade = null;  // the full-size design, which is what the bulb has to fit
+let cup = null;        // ceiling cup for a pendant
+let cap = null;        // cap for the top of a table lamp's shade
+let twist = 1;         // twist preview: 0 = dimmed right down, 1 = full brightness
+let glowPower = 0;     // bulb brightness when fully on
+let mood = 0;          // 0 = studio lights up, 1 = room dimmed for the lamp
+let dim = null;        // twist-to-dim layout, or null
+let ring = null;
+let pinion = null;
+
+const bulbSpec = () => ({ d: state.bulbD, l: state.bulbL, kind: state.bulbKind, capD: SOCKETS[state.socket].capD });
+
+/** Checks the bulb against the full-size shade: clearance to the wall, overhang, and whether it can be fitted. */
+function checkBulb(shade = fullShade, lift = dim ? dim.top : 0) {
+  const bulb = bulbSpec();
+  const H = state.height;
+  let clearance = Infinity, overhang = 0;
+  for (let i = 0; i <= 30; i++) {
+    const x = (bulb.l * i) / 30;
+    // With a dimmer the shade sits higher, on the turn ring, so the bulb starts below it.
+    const z = isTable() ? SOCKET_RISE - lift + x : H - RING_T - SOCKET_DROP - x;
+    if (z < 0 && isTable()) continue;
+    if (z < 0 || z > H) { overhang = Math.max(overhang, z < 0 ? -z : z - H); continue; }
+    clearance = Math.min(clearance, shade.innerRadiusAt(z) - bulbRadiusAt(bulb, x));
+  }
+  const issues = [];
+  if (clearance < 8) issues.push(clearance < 0 ? 'The bulb collides with the shade wall.' : `The bulb sits only ${clearance.toFixed(0)} mm from the shade wall.`);
+  if (overhang > 1) issues.push(`The bulb sticks out of the shade by ${overhang.toFixed(0)} mm.`);
+  const fused = isTable() && state.joint === 'fused';
+  const passR = fused ? shade.topInnerR : shade.bottomInnerR;
+  if (passR * 2 < bulb.d + 6) issues.push(`The bulb will not pass through the ${fused ? 'top' : 'bottom'} opening.`);
+  return { issues, clearance, overhang };
+}
+
+function rebuild() {
+  const k = scaleK();
+  const p = params(k);
+  shade = buildShade(p);
+  dim = hasDimmer() ? dimmerLayout(p, shade) : null;
+  base = isTable() ? buildBase(p, shade, dim) : null;
+  ring = dim ? buildRing(p, shade, dim) : null;
+  pinion = dim ? buildPinion(p, dim) : null;
+  fullShade = k < 1 ? buildShade(params(1)) : shade;
+  const fused = isTable() && state.joint === 'fused' && !dim;
+
+  swap(shadeMesh, toGeometry(shade));
+  shadeMesh.visible = state.showShade;
+  shadeMesh.position.z = isTable() ? state.baseH + (dim ? dim.top : 0) - (fused ? 0.4 : 0) : 0;
+  baseMesh.visible = !!base;
+  if (base) swap(baseMesh, toGeometry(base));
+  ringMesh.visible = pinionMesh.visible = !!dim;
+  if (dim) {
+    swap(ringMesh, toGeometry(ring));
+    swap(pinionMesh, toGeometry(pinion));
+    ringMesh.position.z = state.baseH;
+    pinionMesh.position.set(dim.a, 0, state.baseH + 0.5);
+  }
+  lamp.position.y = isTable() ? 0 : LIFT;
+
+  shadeMat.color.set(state.color);
+  shadeMat.emissive.set(state.color);
+  document.body.dataset.lit = state.lit;
+  baseMat.color.set(state.baseColor);
+
+  // Bulb preview
+  const bulb = bulbSpec();
+  const outline = [new THREE.Vector2(0, 0)];
+  for (let i = 0; i <= 40; i++) { const x = (bulb.l * i) / 40; outline.push(new THREE.Vector2(Math.max(0.01, bulbRadiusAt(bulb, x)), x)); }
+  outline.push(new THREE.Vector2(0, bulb.l));
+  swap(bulbMesh, new THREE.LatheGeometry(outline, 40));
+  if (isTable()) {
+    bulbMesh.rotation.x = 0;
+    bulbMesh.position.y = state.baseH + SOCKET_RISE;
+    glow.position.set(0, bulbMesh.position.y + bulb.l * 0.6, 0);
+  } else {
+    bulbMesh.rotation.x = Math.PI;
+    bulbMesh.position.y = LIFT + state.height - RING_T - SOCKET_DROP;
+    glow.position.set(0, bulbMesh.position.y - bulb.l * 0.6, 0);
+  }
+  glowPower = state.watts * 9000;
+
+  // Ceiling cup at the top of a pendant's cord.
+  cup = isTable() ? null : buildCup(p);
+  cupMesh.visible = !!cup;
+  if (cup) {
+    swap(cupMesh, toGeometry(cup));
+    cupMesh.position.z = state.height + 370;
+  }
+
+  // Cap on top of the shade, shown lip-down in the opening.
+  cap = isTable() && state.cap === 'cap' ? buildCap(p, shade) : null;
+  capMesh.visible = !!cap && state.showShade;
+  if (cap) {
+    swap(capMesh, toGeometry(place(cap, { flipH: CAP_H })));
+    capMesh.position.z = shadeMesh.position.z + state.height - (CAP_H - 2.4);
+  }
+
+  wall.visible = state.showWall;
+  glow.castShadow = state.showWall;
+  bedLine.scale.setScalar(Number(state.bed) / BED);
+  document.getElementById('twistWrap').hidden = !dim;
+  cord.visible = !isTable();
+  cord.position.y = LIFT + state.height + 200;
+
+  const totalH = isTable() ? state.baseH + (dim ? dim.top : 0) + state.height : state.height;
+  controls.target.set(0, lamp.position.y + totalH / 2, 0);
+
+  updateReadouts();
+  saveDesign();
+}
+
+let queued = false;
+function schedule() {
+  if (queued) return;
+  queued = true;
+  requestAnimationFrame(() => { queued = false; rebuild(); });
+}
+
+/** The printable parts, each turned the way it should sit on the bed and at the chosen print scale. */
+function parts() {
+  const k = scaleK();
+  let list;
+  if (!isTable()) list = [
+    { name: 'Shade', file: 'lamp-shade', mesh: shade.ringBuilt ? place(shade, { flipH: state.height }) : shade },
+    { name: 'Ceiling cup', file: 'lamp-ceiling-cup', mesh: cup },
+  ];
+  else if (dim) list = [
+    { name: 'Shade', file: 'lamp-shade', mesh: shade },
+    { name: 'Base', file: 'lamp-base', mesh: base },
+    { name: 'Turn ring', file: 'lamp-turn-ring', mesh: ring },
+    // Flipped so the nut pocket faces up and needs no supports.
+    { name: 'Small gear', file: 'lamp-small-gear', mesh: place(pinion, { flipH: PINION_H }) },
+  ];
+  else if (state.joint === 'fused') list = [{ name: 'Lamp', file: 'lamp', mesh: merge([base, place(shade, { dz: state.baseH - 0.4 })]) }];
+  else list = [{ name: 'Shade', file: 'lamp-shade', mesh: shade }, { name: 'Base', file: 'lamp-base', mesh: base }];
+  if (cap) list.push({ name: 'Cap', file: 'lamp-cap', mesh: cap });
+  return k < 1 ? list.map((part) => ({ ...part, mesh: scaled(part.mesh, k) })) : list;
+}
+
+// ---------- Readouts ----------
+
+const label = (def, value) => def.options.find(([v]) => v === value)[1];
+const selectDef = (id) => SELECTS.find((s) => s.id === id);
+const massOf = (mesh, k) => (meshVolume(mesh) / 1000) * MATERIALS[state.material].density * k ** 3;
+const grams = (mesh, k) => `${massOf(mesh, k).toFixed(0)} g`;
+
+/** How the lamp is switched: 'none', 'gear' (twist to dim), 'push' or 'touch'. Only table lamps have a control. */
+const control = () => (isTable() ? state.dimmer : 'none');
+const onBattery = () => isTable() && state.power === 'battery';
+/** Anything with a control or a battery runs on a low voltage, never mains. */
+const lowVoltage = () => control() !== 'none' || onBattery();
+
+const mm = (v) => `${+v.toFixed(1)}`;
+
+/** Overall width and height of a part, pattern included. */
+function extent(mesh) {
+  const P = mesh.positions;
+  let r = 0, top = 0;
+  for (let i = 0; i < P.length; i += 3) { r = Math.max(r, Math.hypot(P[i], P[i + 1])); top = Math.max(top, P[i + 2]); }
+  return { width: 2 * r, height: top };
+}
+const listing = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items.join(''));
+
+function updateReadouts() {
+  const k = scaleK();
+  const fit = checkBulb();
+  const fused = isTable() && state.joint === 'fused' && !dim;
+
+  // Problems with the design, shown under every step.
+  const warnings = [...new Set([...fullShade.problems, ...shade.problems, ...(base ? base.problems : []), ...(dim ? dim.problems : []), ...fit.issues])];
+  const widest = Math.max(state.width, base ? Math.max(base.footR, base.topR) * 2 : 0) * k;
+  const tallest = (fused ? state.height + state.baseH : Math.max(state.height, base ? state.baseH : 0)) * k;
+  const bed = Number(state.bed), nozzle = Number(state.nozzle), plastic = MATERIALS[state.material];
+  if (widest > bed || tallest > bed) warnings.push(`A part is bigger than your ${bed} mm print bed. Make it smaller, or lower the print scale in step 06.`);
+  if (state.watts > plastic.maxW) warnings.push(`${state.watts} W is a lot of heat for ${plastic.label}. Use a lower-power bulb${state.material === 'pla' ? ', or print in PETG' : ''}, and leave the top open.`);
+  if (params(k).wall * k < nozzle * 2 - 0.01) warnings.push(`The wall is thinner than two passes of a ${nozzle} mm nozzle. Make it at least ${mm(nozzle * 2)} mm.`);
+
+  // Rough print figures. A base is mostly hollow inside once sliced, so only part of its volume counts.
+  const total = massOf(shade, k) + (base ? massOf(base, k) * 0.35 : 0) + (dim ? massOf(ring, k) + massOf(pinion, k) : 0) + (cup ? massOf(cup, k) : 0);
+  const hours = (total / plastic.density) * 1000 / (nozzle >= 0.6 ? 16 : 9) / 3600 * 1.25;
+
+  if (isTable() && state.baseShape === 'stem') {
+    if (dim) warnings.push('The twist dimmer needs a full-width base, so the stem is not used. Pick another way to switch the lamp to get a stem.');
+    else if (state.baseD < state.width * 0.5) warnings.push(`The foot is narrow for a ${state.width} mm shade and the lamp may tip. Make the foot at least ${Math.ceil(state.width * 0.5)} mm across.`);
+  }
+  if (isTable() && state.cap === 'cap' && !cap) warnings.push('The top opening is too small for a cap. Widen the top opening.');
+  if (cap && state.watts > 6) warnings.push('A cap traps heat. Keep a capped lamp to a 6 W LED or less.');
+  if (lowVoltage() && SOCKETS[state.socket].capD === 20) warnings.push('GU10 bulbs are mains voltage. For a switch, dimmer or battery, pick a low-voltage light instead.');
+  document.getElementById('warnings').innerHTML = warnings.map((w) => `<li>${w}</li>`).join('');
+
+  // Things to know before slicing, shown in the Make step.
+  const advice = ['Keep the scale at 100% in your slicer. To make the lamp smaller, change the dimensions or the print scale here, so the wall stays thick enough to print.'];
+  if (k < 1) advice.push(`At ${state.printScale}% this is a display model: the socket hole and the room for the bulb shrink too, so real parts will not fit.`);
+  const steep = ['bottom', 'middle', 'top'].filter((band) => shade.lean[band] > 55).map((band) => `${Math.round(shade.lean[band])}° near the ${band}`);
+  if (steep.length) advice.push(`The shade wall leans ${listing(steep)}, measured from vertical. Past about 55° it prints rough without supports: turn supports on in your slicer, or reshape the shade (taller, or wider openings).`);
+  if (dim) {
+    advice.push(`Dimmer: twisting the shade about ${Math.round(dim.twist)}° covers the potentiometer's full range. The shade is a snug push fit on the turn ring, so if it is forced past the end it slips instead of breaking the potentiometer.`);
+    advice.push(`Assembly: bolt the potentiometer under the base's top plate at the end of the slot, ${mm(dim.a)} mm from the centre, push the small gear onto its shaft, then drop the turn ring into the dish.`);
+    advice.push('A potentiometer cannot dim a mains bulb by itself. Use it with a low-voltage LED dimmer board and a 12 V dimmable light, or have a qualified person fit a mains dimmer module.');
+    if (dim.grew) advice.push(`The turn ring is ${mm(dim.Ro * 2)} mm across, wider than the shade's bottom, to make room for the gear beside the socket.`);
+    advice.push('The gear fit is untested. If the ring binds or rattles after printing, change the fit gap in step 05 and reprint the small gear.');
+  }
+  advice.push(!isTable()
+    ? 'The shade is exported upside down so the socket ring sits flat on the bed.'
+    : dim
+      ? 'Shade, base and turn ring print upright. The small gear is exported with its nut pocket facing up.'
+    : fused
+      ? 'Shade and base are exported as one piece, standing upright.'
+      : 'Both parts print upright as shown. The 3MF file holds them as two separate objects.');
+  document.getElementById('advice').innerHTML = advice.map((a) => `<li>${a}</li>`).join('');
+
+  const fitEl = document.getElementById('fit');
+  fitEl.className = fit.issues.length ? 'bad' : 'ok';
+  fitEl.textContent = fit.issues.length ? fit.issues.join(' ') : `Bulb fits with ${fit.clearance.toFixed(0)} mm to the shade wall.`;
+
+  const tris = (shade.indices.length + (base ? base.indices.length : 0) + (dim ? ring.indices.length + pinion.indices.length : 0)) / 3;
+  const rows = [
+    ['Form', FORMS[state.form].label],
+    ['Shade size', `${state.width} × ${state.height} mm, ${state.wall.toFixed(1)} mm wall`],
+    ['Surface', hasRelief() ? `${label(selectDef('relief'), state.relief)} on ${label(selectDef('reliefOn'), state.reliefOn).toLowerCase()}` : 'Plain'],
+    ['Skin', label(selectDef('skin'), state.skin)],
+    ['Bulb', `${BULBS[state.bulb].label}, ${SOCKETS[state.socket].label}`],
+    ['Stand', isTable() ? `${label(selectDef('baseShape'), state.baseShape)} base, ${dim ? 'turn ring' : label(selectDef('joint'), state.joint).toLowerCase()}` : 'Pendant'],
+    ...(dim ? [['Dimmer', `${dim.z2} and ${dim.z1} teeth, ${Math.round(dim.twist)}° twist`], ['Ring and gear plastic', `${grams(ring, k)} + ${grams(pinion, k)}`]] : []),
+    ...(k < 1 ? [['Printed at', `${state.printScale}%: ${mm(extent(shade).width * k)} × ${mm(extent(shade).height * k)} mm, ${mm(params(k).wall * k)} mm wall`]] : []),
+    ...(state.cutout !== 'none' ? [['Cut-outs', `${label(selectDef('cutout'), state.cutout)}, ${mm(state.cutSize)} mm`]] : []),
+    ['Shade plastic', grams(shade, k)],
+    ...(base ? [['Base plastic', `${grams(base, k)} if printed solid`]] : []),
+    ['Print time, rough', `${hours < 1 ? '< 1' : Math.round(hours)} h`],
+    ['Plastic cost, rough', `$${(total / 1000 * plastic.price).toFixed(2)} at $${plastic.price}/kg`],
+    ['Triangles', tris.toLocaleString()],
+  ];
+  document.getElementById('summary').innerHTML = rows.map(([name, value]) => `<dt>${name}</dt><dd>${value}</dd>`).join('');
+  renderExports();
+}
+
+function download(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function renderExports() {
+  const box = document.getElementById('exports');
+  box.innerHTML = '';
+  const add = (text, cls, run) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = cls;
+    b.textContent = text;
+    b.addEventListener('click', async () => { b.disabled = true; try { await run(); } finally { b.disabled = false; } });
+    box.appendChild(b);
+  };
+  const list = parts().map((p) => p.name);
+  const size = scaleK() < 1 ? ` at ${state.printScale}% size` : '';
+  add(`Download 3MF (all parts)${size}`, 'primary', async () => download(await to3MF(parts()), 'lamp.3mf'));
+  list.forEach((name, i) => add(`Download ${name} STL${size}`, 'ghost', () => { const p = parts()[i]; download(toSTL(p.mesh), `${p.file}.stl`); }));
+}
+
+// ---------- Controls ----------
+
+const widgets = [];
+
+function fmt(def, value) {
+  const digits = def.step < 1 ? 1 : 0;
+  const unit = def.unit === '°' || def.unit === '%' || def.unit === '×' ? def.unit : def.unit ? ` ${def.unit}` : '';
+  return `${Number(value).toFixed(digits)}${unit}`;
+}
+
+for (const def of SLIDERS) {
+  const wrap = document.createElement('div');
+  wrap.className = 'slider';
+  wrap.innerHTML = `
+    <div class="top"><label for="${def.id}">${def.label}</label><output></output></div>
+    <input type="range" id="${def.id}" min="${def.min}" max="${def.max}" step="${def.step}">`;
+  document.getElementById(def.group).appendChild(wrap);
+  const input = wrap.querySelector('input');
+  const out = wrap.querySelector('output');
+  const get = def.get || (() => state[def.id]);
+  input.addEventListener('input', () => {
+    const v = Number(input.value);
+    if (def.set) def.set(v); else state[def.id] = v;
+    if (def.after) { def.after(v); syncUI(); } else out.textContent = fmt(def, v);
+    schedule();
+  });
+  widgets.push({ wrap, def, sync: () => { input.value = get(); out.textContent = fmt(def, get()); } });
+}
+
+for (const def of SELECTS) {
+  const wrap = document.createElement('label');
+  wrap.className = 'row';
+  wrap.innerHTML = `<span>${def.label}</span><select id="${def.id}">${def.options.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>`;
+  document.getElementById(def.group).appendChild(wrap);
+  const select = wrap.querySelector('select');
+  select.addEventListener('change', () => {
+    state[def.id] = select.value;
+    if (def.after) def.after(select.value);
+    syncUI();
+    schedule();
+  });
+  widgets.push({ wrap, def, sync: () => { select.value = state[def.id]; } });
+}
+
+// Starting forms, each drawn from its own silhouette.
+const formBar = document.getElementById('forms');
+for (const [id, form] of Object.entries(FORMS)) {
+  const d = form.defaults;
+  const pts = formShape({ form: id, ...d, free: state.free }, 28);
+  const k = Math.min(50 / d.width, 36 / d.height);
+  const side = (sign) => pts.map((q) => `${(27 + sign * q.r * (d.width / 2) * k).toFixed(1)},${(38 - q.z * d.height * k).toFixed(1)}`);
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.dataset.form = id;
+  b.innerHTML = `<svg viewBox="0 0 54 40" aria-hidden="true"><polygon points="${[...side(1), ...side(-1).reverse()].join(' ')}"/></svg>${form.label}`;
+  b.addEventListener('click', () => { Object.assign(state, { form: id }, d); syncUI(); schedule(); });
+  formBar.appendChild(b);
+}
+
+function bindLook(id, type) {
+  const el = document.getElementById(id);
+  el.addEventListener(type === 'check' ? 'change' : 'input', () => { state[id] = type === 'check' ? el.checked : el.value; schedule(); });
+  return () => { if (type === 'check') el.checked = state[id]; else el.value = state[id]; };
+}
+const lookSyncs = [bindLook('color'), bindLook('baseColor'), bindLook('lit', 'check'), bindLook('showShade', 'check'), bindLook('showWall', 'check')];
+document.getElementById('twist').addEventListener('input', (e) => { twist = Number(e.target.value) / 100; });
+
+function syncUI() {
+  for (const w of widgets) { w.sync(); w.wrap.hidden = w.def.show ? !w.def.show() : false; }
+  for (const b of formBar.children) b.setAttribute('aria-pressed', b.dataset.form === state.form);
+  lookSyncs.forEach((f) => f());
+  const nameBox = document.getElementById('designName');
+  if (nameBox.value !== state.name) nameBox.value = state.name;
+}
+
+document.getElementById('random').addEventListener('click', () => {
+  const pick = (list) => list[Math.floor(Math.random() * list.length)];
+  const form = pick(Object.keys(FORMS));
+  const relief = pick(['none', 'ribs', 'ribs', 'scallops', 'pleats', 'rings', 'diamonds']);
+  Object.assign(state, { form }, FORMS[form].defaults, { relief }, RELIEF_DEFAULTS[relief] || {});
+  state.free = state.free.map(() => 35 + Math.round(Math.random() * 65));
+  if (relief !== 'rings' && relief !== 'none') state.reliefTwist = pick([0, 0, 60, 120, 180, -120]);
+  syncUI();
+  schedule();
+});
+
+// ---------- Saved lamps ----------
+
+const SHELF_KEY = 'lampwright-shelf';
+const nameInput = document.getElementById('designName');
+const shelfBox = document.getElementById('shelf');
+const shelfList = document.getElementById('shelf-list');
+const shelfStatus = document.getElementById('shelf-status');
+const shelfToggle = document.getElementById('toggleShelf');
+
+function readShelf() {
+  try {
+    const list = JSON.parse(localStorage.getItem(SHELF_KEY));
+    return Array.isArray(list) ? list.filter((e) => e && typeof e.name === 'string' && e.design && typeof e.design === 'object') : [];
+  } catch { return []; }
+}
+function writeShelf(list) {
+  try { localStorage.setItem(SHELF_KEY, JSON.stringify(list)); return true; } catch { return false; }
+}
+
+function silhouette(design) {
+  const d = { ...DEFAULTS, ...design };
+  if (!FORMS[d.form]) return '';
+  const pts = formShape(d, 28);
+  const k = Math.min(30 / d.width, 22 / d.height);
+  const side = (sign) => pts.map((q) => `${(17 + sign * q.r * (d.width / 2) * k).toFixed(1)},${(24 - q.z * d.height * k).toFixed(1)}`);
+  return `<svg viewBox="0 0 34 26" aria-hidden="true"><polygon points="${[...side(1), ...side(-1).reverse()].join(' ')}"/></svg>`;
+}
+
+function renderShelf() {
+  const list = readShelf();
+  shelfToggle.textContent = `My lamps (${list.length})`;
+  shelfList.innerHTML = '';
+  if (!list.length) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'No saved lamps yet. Name this one and press Save.';
+    shelfList.appendChild(li);
+  }
+  for (const entry of list) {
+    const li = document.createElement('li');
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'open';
+    open.innerHTML = silhouette(entry.design);
+    const text = document.createElement('span');
+    const title = document.createElement('strong');
+    title.textContent = entry.name;
+    const meta = document.createElement('small');
+    const form = FORMS[entry.design.form];
+    meta.textContent = `${form ? form.label : 'Lamp'}, ${entry.design.width} × ${entry.design.height} mm`;
+    text.append(title, meta);
+    open.appendChild(text);
+    open.addEventListener('click', () => {
+      applyDesign(entry.design);
+      state.name = entry.name;
+      syncUI();
+      schedule();
+      shelfStatus.textContent = `Opened "${entry.name}".`;
+    });
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'del';
+    del.textContent = 'Delete';
+    del.addEventListener('click', () => {
+      if (del.dataset.armed) {
+        writeShelf(readShelf().filter((e) => e.name !== entry.name));
+        renderShelf();
+        shelfStatus.textContent = `Deleted "${entry.name}".`;
+      } else {
+        del.dataset.armed = '1';
+        del.textContent = 'Really delete?';
+      }
+    });
+    li.append(open, del);
+    shelfList.appendChild(li);
+  }
+}
+
+nameInput.addEventListener('input', () => { state.name = nameInput.value.slice(0, 40); saveDesign(); });
+
+document.getElementById('saveDesign').addEventListener('click', () => {
+  const name = state.name.trim() || DEFAULTS.name;
+  state.name = name;
+  const list = readShelf();
+  const entry = { name, saved: new Date().toISOString(), design: structuredClone(state) };
+  const at = list.findIndex((e) => e.name === name);
+  if (at >= 0) list[at] = entry; else list.unshift(entry);
+  const ok = writeShelf(list);
+  syncUI();
+  renderShelf();
+  shelfBox.hidden = false;
+  shelfToggle.setAttribute('aria-expanded', 'true');
+  shelfStatus.textContent = !ok ? 'This browser would not store the lamp. Use Export file instead.' : at >= 0 ? `Updated "${name}".` : `Saved "${name}".`;
+});
+
+shelfToggle.addEventListener('click', () => {
+  shelfBox.hidden = !shelfBox.hidden;
+  shelfToggle.setAttribute('aria-expanded', String(!shelfBox.hidden));
+});
+
+document.getElementById('exportDesign').addEventListener('click', () => {
+  const file = { app: 'lampwright', version: 1, name: state.name, design: state };
+  const safe = state.name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'lamp';
+  download(new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }), `${safe}.lamp.json`);
+});
+
+const importFile = document.getElementById('importFile');
+document.getElementById('importDesign').addEventListener('click', () => importFile.click());
+importFile.addEventListener('change', async () => {
+  const picked = importFile.files[0];
+  importFile.value = '';
+  if (!picked) return;
+  try {
+    const data = JSON.parse(await picked.text());
+    const design = data && data.app === 'lampwright' ? data.design : null;
+    if (!design || typeof design !== 'object' || !FORMS[design.form]) throw new Error('not a design');
+    applyDesign(design);
+    if (typeof data.name === 'string' && data.name.trim()) state.name = data.name.trim().slice(0, 40);
+    syncUI();
+    schedule();
+    shelfStatus.textContent = `Opened "${state.name}" from the file. Press Save to keep it in My lamps.`;
+  } catch {
+    shelfStatus.textContent = 'That file is not a Lampwright design. Choose a .lamp.json file exported from this app.';
+  }
+});
+
+
+document.getElementById('reset').addEventListener('click', () => {
+  Object.assign(state, structuredClone(DEFAULTS));
+  syncUI();
+  schedule();
+});
+
+document.getElementById('fitBulb').addEventListener('click', () => {
+  const need = (v, min, max) => Math.min(max, Math.max(v, Math.ceil(min)));
+  state.width = need(state.width, state.bulbD + 2 * (24 + state.wall), 320);
+  state.height = need(state.height, state.bulbL + (isTable() ? SOCKET_RISE : SOCKET_DROP + RING_T) + 25, 320);
+  if (usesOpening('bottom')) state.bottomOpen = need(state.bottomOpen, state.bulbD + 16, Math.round(state.width * 0.95));
+  if (usesOpening('top') && isTable() && state.joint === 'fused') state.topOpen = need(state.topOpen, state.bulbD + 16, Math.round(state.width * 0.95));
+  // Then grow the shade a little at a time until the bulb clears the wall everywhere.
+  const skin = state.skin;
+  state.skin = 'none';
+  for (let i = 0; i < 60; i++) {
+    const fit = checkBulb(buildShade(params(1)));
+    if (fit.overhang > 1 && state.height < 320) state.height = Math.min(320, state.height + 6);
+    else if (fit.clearance < 12 && state.width < 320) {
+      state.width = Math.min(320, state.width + 6);
+      if (usesOpening('top')) state.topOpen = Math.min(Math.round(state.width * 0.95), state.topOpen + 6);
+    }
+    else if (fit.clearance < 12 && state.height < 320) state.height = Math.min(320, state.height + 6);
+    else break;
+  }
+  state.skin = skin;
+  syncUI();
+  schedule();
+});
+
+// ---------- Workflow steps ----------
+
+let stepIndex = 0;
+const stepNav = document.getElementById('steps');
+STEPS.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.innerHTML = `<b>${String(i + 1).padStart(2, '0')}</b>${s.name}`;
+  b.addEventListener('click', () => showStep(i));
+  stepNav.appendChild(b);
+});
+
+function showStep(i) {
+  stepIndex = i;
+  const step = STEPS[i];
+  document.querySelectorAll('.step').forEach((el) => el.classList.toggle('active', el.dataset.step === step.id));
+  [...stepNav.children].forEach((b, n) => { if (n === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+  document.getElementById('step-title').textContent = step.name;
+  document.getElementById('step-desc').textContent = step.desc;
+  document.getElementById('back').disabled = i === 0;
+  const next = document.getElementById('next');
+  next.hidden = i === STEPS.length - 1;
+  if (!next.hidden) next.textContent = `Next: ${STEPS[i + 1].name}`;
+}
+document.getElementById('back').addEventListener('click', () => showStep(Math.max(0, stepIndex - 1)));
+document.getElementById('next').addEventListener('click', () => showStep(Math.min(STEPS.length - 1, stepIndex + 1)));
+
+// ---------- Loop ----------
+
+function resize() {
+  const { clientWidth: w, clientHeight: h } = canvas.parentElement;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
+loadDesign();
+syncUI();
+renderShelf();
+showStep(0);
+rebuild();
+
+// ---------- Pages: home, build guide, designer ----------
+
+const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pages = Object.fromEntries(['home', 'kits', 'shop', 'guide', 'design'].map((id) => [id, document.getElementById(id)]).filter(([, el]) => el));
+
+// ---------- Ready-made lamps ----------
+// Starter designs, one per way of switching. Replace each `design` with a finished one
+// exported from the designer (My lamps, Export file) when the real kits are ready.
+const KITS = [
+  { name: 'Twist', buy: '', line: 'Turn the shade to dim it. A potentiometer and two printed gears do the work.',
+    design: { form: 'pear', height: 220, width: 190, topOpen: 80, bottomOpen: 130, relief: 'ribs', reliefCount: 14, reliefDepth: 4, reliefTwist: 90,
+      socket: 'e26', bulb: 'a60', bulbD: 60, bulbL: 108, bulbKind: 'a', holeD: 40, watts: 6, baseShape: 'rounded', baseD: 150, baseH: 60, dimmer: 'gear', power: 'plug' } },
+  { name: 'Click', buy: '', line: 'Press the button in the base to switch it on and off.',
+    design: { form: 'cone', height: 170, width: 220, topOpen: 100, relief: 'pleats', reliefCount: 24, reliefDepth: 3, reliefTwist: 0,
+      socket: 'e26', bulb: 'a60', bulbD: 60, bulbL: 108, bulbKind: 'a', holeD: 40, watts: 6, baseShape: 'straight', baseD: 160, baseH: 70, dimmer: 'push', power: 'plug' } },
+  { name: 'Tap', buy: '', line: 'Tap the base to switch it on and off. Cordless: it runs from a battery inside.',
+    design: { form: 'sphere', height: 170, width: 190, topOpen: 90, bottomOpen: 120, relief: 'none', cap: 'cap',
+      socket: 'e26', bulb: 'a60', bulbD: 60, bulbL: 108, bulbKind: 'a', holeD: 40, watts: 5, baseShape: 'waisted', baseD: 150, baseH: 64, dimmer: 'touch', power: 'battery', batteryD: 70 } },
+];
+
+const kitList = document.getElementById('kit-list');
+KITS.forEach((kit) => {
+  const li = document.createElement('li');
+  li.innerHTML = `${silhouette(kit.design)}<div><h2></h2><p></p><p class="has">You get: the print files for every part, a shopping guide and a build guide.</p><div class="acts"></div></div>`;
+  li.querySelector('h2').textContent = kit.name;
+  li.querySelector('p').textContent = kit.line;
+  const acts = li.querySelector('.acts');
+  if (!acts.children.length) {
+    // The public site sells each lamp through the shop.
+    acts.innerHTML = kit.buy
+      ? `<a class="btn solid" href="${kit.buy}" target="_blank" rel="noopener">Buy on Shopify</a>`
+      : '<span class="soon">Coming soon to our shop</span>';
+  }
+  kitList.appendChild(li);
+});
+let page = 'home';
+
+function route() {
+  const asked = location.hash.replace('#/', '');
+  page = asked in pages ? asked : 'home';
+  for (const [name, el] of Object.entries(pages)) el.hidden = name !== page;
+  // One 3D view serves both pages: it sits in the home page's hero, or in the designer's stage.
+  const host = document.getElementById(page === 'home' ? 'hero-stage' : 'stage');
+  const has3d = page === 'home' || page === 'design';
+  if (has3d && canvas.parentElement !== host) host.prepend(canvas);
+  controls.enabled = page === 'design';
+  controls.autoRotate = page === 'home' && !calm;
+  controls.autoRotateSpeed = 0.7;
+  canvas.style.touchAction = page === 'design' ? 'none' : 'auto';
+  resize();
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+route();
+
+
+// Switching the lamp on dims the studio so the lamp lights the scene.
+let last = performance.now();
+function setMood(m) {
+  const mix = (a, b) => a + (b - a) * m;
+  scene.background.lerpColors(DAY, NIGHT, m);
+  scene.fog.color.copy(scene.background);
+  floorMat.color.lerpColors(DAY, NIGHT, m * 0.9);
+  wallMat.color.copy(floorMat.color);
+  // With a dimmer, the twist preview turns the shade and sets how bright the bulb is.
+  const bright = dim ? 0.08 + 0.92 * twist : 1;
+  const angle = dim ? (twist * dim.twist * Math.PI) / 180 : 0;
+  shadeMesh.rotation.z = ringMesh.rotation.z = angle;
+  pinionMesh.rotation.z = dim ? (angle * dim.z2) / dim.z1 : 0;
+  hemi.intensity = mix(1, 0.07);
+  key.intensity = mix(2.2, 0.12);
+  fill.intensity = mix(0.5, 0.04);
+  bedMat.color.set(m > 0.5 ? 0xffffff : 0x16181b);
+  bedMat.opacity = mix(0.22, 0.14);
+  shadeMat.emissiveIntensity = 0.34 * m * bright;
+  bulbMat.emissiveIntensity = 1.5 * m * bright;
+  glow.intensity = glowPower * m * bright;
+}
+renderer.setAnimationLoop((now) => {
+  const dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  if (page !== 'home' && page !== 'design') return;
+  const target = state.lit || page === 'home' ? 1 : 0;   // the home page always shows the lamp lit
+  mood = calm ? target : mood + (target - mood) * (1 - Math.exp(-dt / 0.22));
+  if (Math.abs(target - mood) < 0.001) mood = target;
+  setMood(mood);
+  controls.update();
+  renderer.render(scene, camera);
+});
+
+// Handy for checking meshes from the browser console.
+window.lampwright = { state, parts, params, weld, to3MF, rebuild, syncUI, FORMS };
+
+</script>
+</body>
+</html>
