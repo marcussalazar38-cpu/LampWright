@@ -1304,7 +1304,8 @@ function buildRing(p, shade, d) {
 function buildPinion(p, d) {
   const k = p.k || 1;
   const gear = gearPair(p, d).pinion;
-  const R = p.potShaft === 'd' ? p.potShaftD / 2 + 0.1 / k : p.potShaftD / 2 - 0.05;
+  // A ridged shaft grips a plain hole of its own size: printed holes come out slightly small.
+  const R = p.potShaft === 'd' ? p.potShaftD / 2 + 0.1 / k : p.potShaftD / 2;
   const flat = p.potShaftD / 4 + 0.1 / k;   // a 6 mm D-shaft is 4.5 mm across the flat
   const bore = (th) => {
     if (p.potShaft !== 'd') return R;
@@ -1322,6 +1323,37 @@ function buildPinion(p, d) {
   ];
   const mb = new MeshBuilder(480);
   mb.revolve(loop);
+  return mb.done();
+}
+
+const POST_R = 15;      // light post radius: an LED strip winds around it
+const POST_SEAT = 6;    // how far the post's plug reaches below the base's top plate
+
+/**
+ * A hollow post that plugs into the base's centre hole in place of a bulb holder.
+ * An LED strip winds around it and its wires drop down the middle. Modelled as it prints.
+ */
+function buildLightPost(p) {
+  const k = p.k || 1;
+  const plug = p.holeD / 2 - 0.2 / k;
+  const flange = p.holeD / 2 + 4;
+  const top = POST_SEAT + 2 + p.postH;
+  const wall = Math.max(2, 1.2 / k);
+  const P = (r, z) => ({ r, z, sharp: true });
+  const mb = new MeshBuilder(240);
+  // The 45° shoulder under the flange centres the post in the hole and prints without supports.
+  mb.revolve([P(plug, 0), P(plug, 2), P(flange, POST_SEAT), P(flange, POST_SEAT + 2), P(POST_R, POST_SEAT + 2), P(POST_R, top), P(POST_R - wall, top), P(POST_R - wall, 0)]);
+  return mb.done();
+}
+
+/** A cover that presses into the bottom of the base to hold a battery in. The centre hole is a finger pull. */
+function buildCover(p, base) {
+  const k = p.k || 1;
+  const plug = base.cavityR - 0.2 / k;
+  const rim = Math.max(1.6, 1.2 / k);
+  const P = (r, z) => ({ r, z, sharp: true });
+  const mb = new MeshBuilder(240);
+  mb.revolve([P(plug, 0), P(plug, 8), P(plug - rim, 8), P(plug - rim, 2), P(7, 2), P(7, 0)]);
   return mb.done();
 }
 
@@ -1433,7 +1465,9 @@ function buildBase(p, shade, d = null) {
   let collar = false;
   if (d) {
     // A raised rim forms a dish that the turn ring sits in.
-    loop.push(P(Rt, Hb + DISH_H), P(Rt - dishW, Hb + DISH_H), P(Rt - dishW, Hb));
+    // The dish always fits the ring, even when the base has to be wider than the ring for what is inside it.
+    const dishR = d.Ro + d.gap;
+    loop.push(P(Rt, Hb + DISH_H), P(dishR, Hb + DISH_H), P(dishR, Hb));
   } else if (p.joint !== 'fused') {
     const rc = shade.bottomInnerR - (p.joint === 'snug' ? 0.15 : 0.4) / k;
     if (rc - collarW > holeR + 1.5) {
@@ -1496,7 +1530,7 @@ function buildBase(p, shade, d = null) {
 
   const mb = new MeshBuilder(S);
   mb.revolve(loop);
-  return { ...mb.done(), problems, collar, topR: Rt, footR: Rf };
+  return { ...mb.done(), problems, collar, topR: Rt, footR: Rf, cavityR: rcav, stem };
 }
 
 // ---------- Bulbs ----------
@@ -1688,12 +1722,12 @@ async function to3MF(parts) {
   ]);
 }
 
-return { RING_T, PLATE_T, COLLAR_H, COLLAR_W, FORMS, formShape, reliefWave, buildShade, GEAR_M, GEAR_H, PINION_H, DISH_H, dimmerLayout, buildRing, buildPinion, CAP_H, buildCap, buildCup, buildBase, bulbRadiusAt, meshVolume, place, scaled, merge, weld, toSTL, to3MF };
+return { RING_T, PLATE_T, COLLAR_H, COLLAR_W, FORMS, formShape, reliefWave, buildShade, GEAR_M, GEAR_H, PINION_H, DISH_H, dimmerLayout, buildRing, buildPinion, POST_R, POST_SEAT, buildLightPost, buildCover, CAP_H, buildCap, buildCup, buildBase, bulbRadiusAt, meshVolume, place, scaled, merge, weld, toSTL, to3MF };
 })();
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-const { FORMS, RING_T, PINION_H, formShape, buildShade, buildBase, bulbRadiusAt, dimmerLayout, buildRing, buildPinion, buildCup, buildCap, CAP_H, meshVolume, place, scaled, merge, weld, toSTL, to3MF } = geometryModule;
+const { FORMS, RING_T, PINION_H, formShape, buildShade, buildBase, bulbRadiusAt, dimmerLayout, buildRing, buildPinion, buildCup, buildCap, CAP_H, buildLightPost, buildCover, meshVolume, place, scaled, merge, weld, toSTL, to3MF } = geometryModule;
 
 // ---------- Catalogues ----------
 
@@ -1763,6 +1797,7 @@ const state = {
   name: 'Untitled lamp',
   cutout: 'none', cutSize: 8,
   cap: 'open', power: 'plug', batteryD: 60, btnD: 12, stemD: 28,
+  light: 'bulb', postH: 70,
   bed: '256', nozzle: '0.4', material: 'pla',
   dimmer: 'none', gearTeeth: 16, potShaft: 'd', potShaftD: 6, potBushD: 7, potBodyD: 17, potTravel: 300, fitGap: 0.3,
 };
@@ -1806,6 +1841,8 @@ function applyDesign(saved) {
 
 const isTable = () => state.stand === 'table';
 const hasDimmer = () => isTable() && state.dimmer === 'gear';
+/** The twist lamp can use an LED strip on a printed post instead of a bulb. */
+const strip = () => hasDimmer() && state.light === 'strip';
 const scaleK = () => state.printScale / 100;
 
 /**
@@ -1850,10 +1887,11 @@ const SLIDERS = [
   { id: 'cutSize',     group: 'cut-controls',     label: 'Hole size',       min: 4,   max: 18,  step: 0.5, unit: 'mm', show: () => state.cutout !== 'none' },
   { id: 'batteryD',    group: 'base-controls-2',  label: 'Battery space',   min: 40,  max: 120, step: 1,   unit: 'mm', show: () => isTable() && state.power === 'battery' },
   { id: 'btnD',        group: 'dimmer-controls',  label: 'Button thread',   min: 10,  max: 22,  step: 0.5, unit: 'mm', show: () => isTable() && state.dimmer === 'push' },
+  { id: 'postH',       group: 'dimmer-controls',  label: 'Light post height', min: 40, max: 140, step: 1,  unit: 'mm', show: () => strip() },
   { id: 'gearTeeth',   group: 'dimmer-controls',  label: 'Small gear teeth', min: 14, max: 30,  step: 1,   unit: '',   show: hasDimmer },
   { id: 'potShaftD',   group: 'dimmer-controls',  label: 'Shaft diameter',  min: 4,   max: 8,   step: 0.5, unit: 'mm', show: hasDimmer },
   { id: 'potBushD',    group: 'dimmer-controls',  label: 'Mounting thread', min: 6,   max: 12,  step: 0.5, unit: 'mm', show: hasDimmer },
-  { id: 'potBodyD',    group: 'dimmer-controls',  label: 'Body diameter',   min: 12,  max: 30,  step: 1,   unit: 'mm', show: hasDimmer },
+  { id: 'potBodyD',    group: 'dimmer-controls',  label: 'Body diameter',   min: 12,  max: 50,  step: 1,   unit: 'mm', show: hasDimmer },
   { id: 'potTravel',   group: 'dimmer-controls',  label: 'Knob travel',     min: 200, max: 320, step: 10,  unit: '°',  show: hasDimmer },
   { id: 'fitGap',      group: 'dimmer-controls',  label: 'Fit gap',         min: 0.2, max: 0.6, step: 0.05, unit: 'mm', show: hasDimmer },
 ];
@@ -1895,6 +1933,8 @@ const SELECTS = [
     options: [['plug', 'Plug-in'], ['battery', 'Battery (cordless)']] },
   { id: 'dimmer', group: 'dimmer-selects', label: 'Switched by', show: isTable,
     options: [['none', 'Nothing built in'],['gear', 'Twisting the shade (dims)'], ['push', 'A push button'], ['touch', 'A touch sensor']] },
+  { id: 'light', group: 'dimmer-selects', label: 'Light', show: hasDimmer,
+    options: [['bulb', 'A bulb in a holder'], ['strip', 'LED strip on a printed post']] },
   { id: 'potShaft', group: 'dimmer-selects', label: 'Potentiometer shaft', show: hasDimmer,
     options: [['d', 'D-shaped (one flat)'], ['round', 'Round or knurled']] },
   { id: 'joint', group: 'base-selects-2', label: 'Joint', show: () => isTable() && !hasDimmer(),
@@ -2007,6 +2047,8 @@ let base = null;
 let fullShade = null;  // the full-size design, which is what the bulb has to fit
 let cup = null;        // ceiling cup for a pendant
 let cap = null;        // cap for the top of a table lamp's shade
+let post = null;       // light post for an LED strip
+let cover = null;      // base cover that holds a battery in
 let twist = 1;         // twist preview: 0 = dimmed right down, 1 = full brightness
 let glowPower = 0;     // bulb brightness when fully on
 let mood = 0;          // 0 = studio lights up, 1 = room dimmed for the lamp
@@ -2014,7 +2056,9 @@ let dim = null;        // twist-to-dim layout, or null
 let ring = null;
 let pinion = null;
 
-const bulbSpec = () => ({ d: state.bulbD, l: state.bulbL, kind: state.bulbKind, capD: SOCKETS[state.socket].capD });
+const bulbSpec = () => (strip()
+  ? { d: 32, l: state.postH + 2, kind: 'tube', capD: 32 }   // the light post with its strip
+  : { d: state.bulbD, l: state.bulbL, kind: state.bulbKind, capD: SOCKETS[state.socket].capD });
 
 /** Checks the bulb against the full-size shade: clearance to the wall, overhang, and whether it can be fitted. */
 function checkBulb(shade = fullShade, lift = dim ? dim.top : 0) {
@@ -2101,6 +2145,9 @@ function rebuild() {
     capMesh.position.z = shadeMesh.position.z + state.height - (CAP_H - 2.4);
   }
 
+  post = strip() ? buildLightPost(p) : null;
+  cover = base && !base.stem && isTable() && state.power === 'battery' ? buildCover(p, base) : null;
+
   wall.visible = state.showWall;
   glow.castShadow = state.showWall;
   bedLine.scale.setScalar(Number(state.bed) / BED);
@@ -2140,6 +2187,8 @@ function parts() {
   else if (state.joint === 'fused') list = [{ name: 'Lamp', file: 'lamp', mesh: merge([base, place(shade, { dz: state.baseH - 0.4 })]) }];
   else list = [{ name: 'Shade', file: 'lamp-shade', mesh: shade }, { name: 'Base', file: 'lamp-base', mesh: base }];
   if (cap) list.push({ name: 'Cap', file: 'lamp-cap', mesh: cap });
+  if (post) list.push({ name: 'Light post', file: 'lamp-light-post', mesh: post });
+  if (cover) list.push({ name: 'Base cover', file: 'lamp-base-cover', mesh: cover });
   return k < 1 ? list.map((part) => ({ ...part, mesh: scaled(part.mesh, k) })) : list;
 }
 
@@ -2191,7 +2240,7 @@ function updateReadouts() {
   }
   if (isTable() && state.cap === 'cap' && !cap) warnings.push('The top opening is too small for a cap. Widen the top opening.');
   if (cap && state.watts > 6) warnings.push('A cap traps heat. Keep a capped lamp to a 6 W LED or less.');
-  if (lowVoltage() && SOCKETS[state.socket].capD === 20) warnings.push('GU10 bulbs are mains voltage. For a switch, dimmer or battery, pick a low-voltage light instead.');
+  if (lowVoltage() && !strip() && SOCKETS[state.socket].capD === 20) warnings.push('GU10 bulbs are mains voltage. For a switch, dimmer or battery, pick a low-voltage light instead.');
   document.getElementById('warnings').innerHTML = warnings.map((w) => `<li>${w}</li>`).join('');
 
   // Things to know before slicing, shown in the Make step.
@@ -2564,7 +2613,7 @@ const pages = Object.fromEntries(['home', 'kits', 'shop', 'guide', 'design'].map
 const KITS = [
   { name: 'Twist', buy: '', line: 'Turn the shade to dim it. A potentiometer and two printed gears do the work.',
     design: { form: 'pear', height: 220, width: 190, topOpen: 80, bottomOpen: 130, relief: 'ribs', reliefCount: 14, reliefDepth: 4, reliefTwist: 90,
-      socket: 'e26', bulb: 'a60', bulbD: 60, bulbL: 108, bulbKind: 'a', holeD: 40, watts: 6, baseShape: 'rounded', baseD: 150, baseH: 60, dimmer: 'gear', power: 'plug' } },
+      socket: 'e26', bulb: 'a60', bulbD: 60, bulbL: 108, bulbKind: 'a', holeD: 40, watts: 6, baseShape: 'rounded', baseD: 150, baseH: 60, dimmer: 'gear', power: 'plug', light: 'strip', postH: 70, potBodyD: 46, cableD: 4, potShaft: 'round', potShaftD: 6, potBushD: 7 } },
   { name: 'Click', buy: '', line: 'Press the button in the base to switch it on and off.',
     design: { form: 'cone', height: 170, width: 220, topOpen: 100, relief: 'pleats', reliefCount: 24, reliefDepth: 3, reliefTwist: 0,
       socket: 'e26', bulb: 'a60', bulbD: 60, bulbL: 108, bulbKind: 'a', holeD: 40, watts: 6, baseShape: 'straight', baseD: 160, baseH: 70, dimmer: 'push', power: 'plug' } },
