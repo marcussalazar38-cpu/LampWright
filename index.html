@@ -102,6 +102,9 @@ a { color: inherit; }
 .plain { margin: 0; padding: 0; list-style: none; font-size: 16px; line-height: 1.55; color: var(--ink-2); }
 .plain li { padding: 12px 0; border-top: 1px solid var(--line); max-width: 52ch; }
 
+/* The recording is of a whole browser window; this trims the tab and address bars off the top. */
+.film video { display: block; width: 100%; aspect-ratio: 2560 / 1272; object-fit: cover; object-position: bottom; background: #171615; border-radius: 14px; }
+
 .ways { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0; border-top: 2px solid var(--ink); }
 .way { display: block; padding: 22px 26px 26px; text-decoration: none; border-bottom: 1px solid var(--line); }
 .way + .way { border-left: 1px solid var(--line); }
@@ -280,6 +283,16 @@ button.small { width: auto; padding: 8px 12px; font-size: 13px; white-space: now
 #shelf-list .del:hover, #shelf-list .del[data-armed] { color: var(--danger); }
 #shelf-status { margin: 0 0 8px; min-height: 18px; font-size: 12.5px; color: var(--ink-2); }
 #shelf-status:empty { display: none; }
+
+/* Simple and Advanced */
+#mode { display: grid; grid-template-columns: 1fr 1fr; margin-top: 14px; padding: 3px; background: #e4e4df; border-radius: 9px; }
+#mode button { padding: 7px; border: 0; border-radius: 7px; background: transparent; color: var(--ink-2); font: 600 13px/1 inherit; cursor: pointer; transition: background 0.2s var(--ease), color 0.2s var(--ease); }
+#mode button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14); }
+#simple { margin-top: 18px; }
+#simple-make { display: grid; gap: 8px; margin-top: 16px; padding-bottom: 6px; }
+body[data-mode="simple"] #steps, body[data-mode="simple"] #step-head, body[data-mode="simple"] .step, body[data-mode="simple"] #panel > footer .nav { display: none; }
+body[data-mode="advanced"] #simple, body[data-mode="advanced"] #simple-make { display: none; }
+body[data-mode="simple"] #dims { border-top: 0; }
 
 #steps {
   display: grid;
@@ -600,6 +613,11 @@ body[data-lit="true"] #hint { color: rgba(255, 255, 255, 0.6); }
     <div id="hero-stage" aria-label="A live 3D view of the lamp currently in the designer"></div>
   </section>
 
+  <section class="band film">
+    <h2>See the designer at work</h2>
+    <video src="lampwright-demo.mp4" autoplay muted loop playsinline controls preload="metadata" aria-label="A screen recording of a lamp being designed in Lampwright"></video>
+  </section>
+
   <section class="band">
     <h2>Three ways to switch it on</h2>
     <div class="ways">
@@ -686,6 +704,17 @@ body[data-lit="true"] #hint { color: rgba(255, 255, 255, 0.6); }
     </div>
   </header>
 
+  <div id="mode" role="group" aria-label="How much to show">
+    <button type="button" data-mode="simple">Simple</button>
+    <button type="button" data-mode="advanced">Advanced</button>
+  </div>
+
+  <section id="simple">
+    <h3>Pick a look</h3>
+    <div id="looks" class="forms"></div>
+    <p class="note">Then set its size and colours. Advanced lets you change everything else: pattern, bulb, base and switch.</p>
+  </section>
+
   <nav id="steps" aria-label="Lamp workflow"></nav>
 
   <div id="step-head">
@@ -729,6 +758,10 @@ body[data-lit="true"] #hint { color: rgba(255, 255, 255, 0.6); }
   <section class="step" data-step="base">
     <div id="base-selects"></div>
     <div id="base-controls"></div>
+    <h3>Base finish</h3>
+    <div id="base-look-selects"></div>
+    <div id="base-look-controls"></div>
+    <h3>Joint, power and switch</h3>
     <div id="base-selects-2"></div>
     <div id="base-controls-2"></div>
     <div id="dimmer-selects"></div>
@@ -758,6 +791,11 @@ body[data-lit="true"] #hint { color: rgba(255, 255, 255, 0.6); }
     <div id="dim-controls"></div>
   </section>
 
+  <div id="simple-make">
+    <button id="simpleDownload" type="button" class="primary">Download print files</button>
+    <button id="goAdvanced" type="button" class="ghost">Change more in Advanced</button>
+  </div>
+
   <footer>
     <ul id="warnings" role="status"></ul>
     <div class="nav">
@@ -774,6 +812,7 @@ body[data-lit="true"] #hint { color: rgba(255, 255, 255, 0.6); }
     <label id="twistWrap" hidden>Twist <input type="range" id="twist" min="0" max="100" value="100" aria-label="Twist the shade to dim"></label>
     <label><input type="checkbox" id="showShade"> Show shade</label>
     <label><input type="checkbox" id="showWall"> Wall</label>
+    <label><input type="checkbox" id="translucent"> Translucent</label>
     <label><input type="color" id="color"> Shade</label>
     <label><input type="color" id="baseColor"> Base</label>
   </div>
@@ -886,6 +925,17 @@ function reliefWave(p, theta, t) {
   const tw = (p.reliefTwist * Math.PI) / 180;
   const phase = n * (theta + tw * t);
   switch (p.relief) {
+    case 'swirl': {
+      // Flowing waves: the twist is slow at the rims and fast through the middle, so the
+      // ridges sweep in an S, and each wave leans over like a curling crest.
+      const sweep = n * (theta + tw * (0.5 - 0.5 * Math.cos(Math.PI * t)));
+      return Math.sin(sweep + 0.7 * Math.sin(sweep));
+    }
+    case 'flow': {
+      // Marbled, flowing ridges: the lines wander from side to side as they climb.
+      const drift = 0.32 * Math.sin(TAU * 1.5 * t + 2 * theta) + 0.14 * Math.sin(TAU * 3.1 * t - 3 * theta);
+      return Math.cos(n * (theta + tw * t + drift));
+    }
     case 'ribs':     return Math.cos(phase);
     case 'scallops': return 2 * Math.abs(Math.cos(phase / 2)) - 1;
     case 'pleats':   return (2 / Math.PI) * Math.asin(Math.cos(phase));
@@ -1092,13 +1142,14 @@ function makeCutout(p) {
 function buildShade(p) {
   const skin = makeSkin(p);
   const cut = makeCutout(p);
-  const S = skin || cut ? 480 : 240;
+  const fineRibs = p.relief !== 'none' && p.reliefCount > 24;   // many thin ridges need a finer mesh
+  const S = skin || cut || fineRibs ? 480 : 240;
   const n = skin || cut ? 240 : 120;
   const prof = profile(p, n);
   const { pts, L } = prof;
   const H = p.height;
   const problems = [];
-  const reliefOn = p.relief !== 'none' && p.reliefOn !== 'base' && p.reliefDepth > 0;
+  const reliefOn = p.relief !== 'none' && p.reliefDepth > 0;
 
   // Patterns ease in away from both rims so the rims stay round and the joints fit.
   const easeLen = 5 + Math.max(10, 4 * p.reliefDepth);
@@ -1107,7 +1158,15 @@ function buildShade(p) {
     q.fade = smooth(5, 12, edge);
     q.reliefFade = smooth(5, easeLen, edge);
   }
-  const relief = (q, th) => (reliefOn ? p.reliefDepth * reliefWave(p, th, q.s / L) * q.reliefFade : 0);
+  // Body lobes: the whole cross-section is pushed into a few big rounded lobes that turn
+  // as they rise. They sit under the surface relief, so fine ridges can ride over big waves.
+  const lobes = p.lobes >= 2 && p.lobeDepth > 0 ? p.lobes : 0;
+  const lobeTw = ((p.lobeTwist || 0) * Math.PI) / 180;
+  const lobeEase = 5 + Math.max(10, 2.5 * (p.lobeDepth || 0));
+  for (const q of pts) q.lobeFade = smooth(5, lobeEase, Math.min(q.s, L - q.s));
+  const relief = (q, th) =>
+    (reliefOn ? p.reliefDepth * reliefWave(p, th, q.s / L) * q.reliefFade : 0)
+    + (lobes ? p.lobeDepth * Math.cos(lobes * (th + lobeTw * (q.s / L))) * q.lobeFade : 0);
 
   const outerAt = (q) => (th) => {
     let d = relief(q, th);
@@ -1188,7 +1247,7 @@ function buildShade(p) {
   const mb = new MeshBuilder(S);
   mb.revolve(loop, holes);
 
-  const slack = reliefOn ? p.reliefDepth : 0;
+  const slack = (reliefOn ? p.reliefDepth : 0) + (lobes ? p.lobeDepth : 0);
   const innerRadiusAt = (z) => {
     let best = Infinity;
     for (let i = 0; i < inner.length - 1; i++) {
@@ -1357,6 +1416,19 @@ function buildCover(p, base) {
   return mb.done();
 }
 
+/**
+ * A diffuser: a thin tube with a closed end that stands over the light and spreads it evenly.
+ * Modelled as it prints, closed end on the bed. r is its outer radius, h its height.
+ */
+function buildDiffuser(p, r, h) {
+  const k = p.k || 1;
+  const t = Math.max(0.6, 0.6 / k);
+  const P = (rr, z) => ({ r: rr, z, sharp: true });
+  const mb = new MeshBuilder(240);
+  mb.revolve([P(r, 0), P(r, h), P(r - t, h), P(r - t, t), P(1.2, t), P(1.2, 0)]);
+  return { ...mb.done(), h, r };
+}
+
 const CAP_H = 7.4;
 
 /**
@@ -1368,10 +1440,13 @@ function buildCap(p, shade) {
   const lip = shade.topInnerR - 0.3 / k;
   const lipW = Math.max(1.6, 1.2 / k);
   if (lip - lipW < 8) return null;
+  const t = 2.4;
+  const vent = 3;
+  const top = t + 5;
   const P = (r, z) => ({ r, z, sharp: true });
   const mb = new MeshBuilder(240);
-  mb.revolve([P(shade.topOuterR, 0), P(shade.topOuterR, 2.4), P(lip, 2.4), P(lip, CAP_H), P(lip - lipW, CAP_H), P(lip - lipW, 2.4), P(3, 2.4), P(3, 0)]);
-  return mb.done();
+  mb.revolve([P(shade.topOuterR, 0), P(shade.topOuterR, t), P(lip, t), P(lip, top), P(lip - lipW, top), P(lip - lipW, t), P(vent, t), P(vent, 0)]);
+  return { ...mb.done(), h: top, t };
 }
 
 /** A ceiling cup for a pendant: a shallow bowl with a hole for the cord. Modelled as it prints, rim up. */
@@ -1385,14 +1460,17 @@ function buildCup(p) {
 
 /** d is the twist-to-dim layout from dimmerLayout(), or null for a plain base. */
 function buildBase(p, shade, d = null) {
-  const S = d ? 480 : 240;
+  const baseSkinOn = !!p.baseSkin && p.baseSkin !== 'none';
+  const S = d || baseSkinOn || (p.baseRelief && p.baseRelief !== 'none' && p.baseReliefCount > 24) ? 480 : 240;
   const problems = [];
   const Hb = p.baseH;
   const holeR = p.holeD / 2;
   // Room under the plate for the socket nut and wiring, and for the potentiometer if there is one.
+  // A battery puck light needs no wiring: it drops into a round seat in the top of the base.
+  const puckR = !d && p.light === 'puck' ? p.puckD / 2 + 0.5 : 0;
   const rcav = d
     ? Math.max(holeR + 12, d.a + p.potBodyD / 2 + 3)
-    : Math.max(holeR + 12, p.power === 'battery' ? p.batteryD / 2 + 1 : 0);
+    : puckR || Math.max(holeR + 12, p.power === 'battery' ? p.batteryD / 2 + 1 : 0);
   // p.k is the print scale. Thin upright walls and the joint gap are sized so they
   // are still printable and still fit after the whole model is shrunk by k.
   const k = p.k || 1;
@@ -1411,7 +1489,11 @@ function buildBase(p, shade, d = null) {
     return Math.max(lerp(Rf, stemR, smooth(8, 8 + down, z)), lerp(stemR, Rt, smooth(Hb - 3 - up, Hb - 3, z)));
   };
   const floorR = stem ? chan + 2 : minR - 1;
-  const reliefOn = p.relief !== 'none' && p.reliefOn !== 'shade' && p.reliefDepth > 0;
+  // The base has its own pattern and skin, separate from the shade's.
+  const own = { relief: p.baseRelief || 'none', reliefCount: p.baseReliefCount, reliefTwist: p.baseReliefTwist };
+  const reliefOn = own.relief !== 'none' && p.baseReliefDepth > 0;
+  const reliefDepth = reliefOn ? p.baseReliefDepth : 0;
+  const skin = makeSkin({ skin: p.baseSkin || 'none', skinScale: 1, width: p.baseD });
 
   // Cable notch: lifts the bottom edge into a small arch at the back of the base.
   const notch = p.cable === 'notch' ? p.cableD + 1 : 0;
@@ -1438,13 +1520,14 @@ function buildBase(p, shade, d = null) {
     loop.push({
       sharp,
       at: (th) => {
-        const d = reliefOn ? p.reliefDepth * reliefWave(p, th, z / Hb) * fade : 0;
+        let d = reliefOn ? reliefDepth * reliefWave(own, th, z / Hb) * fade : 0;
+        if (skin && fade > 0) d += p.baseSkinDepth * fade * skin(th, r * Math.cos(th), r * Math.sin(th), z, z);
         const rr = Math.max(floorR, r + d);
         return [rr, warp(th, rr, z)];
       },
     });
   };
-  const m = 32;
+  const m = skin ? Math.max(48, Math.round(Hb * 1.5)) : 32;
   if (stem) {
     for (let i = 0; i <= 64; i++) wall(stemAt((Hb * i) / 64), (Hb * i) / 64, i === 0 || i === 64);
   } else if (p.baseShape === 'stepped') {
@@ -1456,6 +1539,8 @@ function buildBase(p, shade, d = null) {
       const t = i / m;
       let r = lerp(Rf, Rt, t);
       if (p.baseShape === 'rounded') r += 0.18 * Math.max(Rf, Rt) * Math.sin(Math.PI * t);
+      // A cushion puffs out in a half-circle, like a soft ring under the shade.
+      if (p.baseShape === 'cushion') r += (Hb / 2) * Math.sqrt(Math.max(0, 1 - (2 * t - 1) ** 2));
       if (p.baseShape === 'waisted') r -= 0.55 * (Math.min(Rf, Rt) - minR) * Math.sin(Math.PI * t);
       wall(Math.max(r, minR), t * Hb, i === 0 || i === m);
     }
@@ -1470,7 +1555,7 @@ function buildBase(p, shade, d = null) {
     loop.push(P(Rt, Hb + DISH_H), P(dishR, Hb + DISH_H), P(dishR, Hb));
   } else if (p.joint !== 'fused') {
     const rc = shade.bottomInnerR - (p.joint === 'snug' ? 0.15 : 0.4) / k;
-    if (rc - collarW > holeR + 1.5) {
+    if (rc - collarW > (puckR || holeR) + 1.5) {
       loop.push(P(rc, Hb), P(rc, Hb + COLLAR_H), P(rc - collarW, Hb + COLLAR_H), P(rc - collarW, Hb));
       collar = true;
     } else {
@@ -1503,17 +1588,22 @@ function buildBase(p, shade, d = null) {
       { sharp: true, at: (th) => [rcav, warp(th, rcav, Math.max(1, zc - (rcav - flat(th))))] },
       P(rcav, 0),
     );
+  } else if (puckR) {
+    // The seat is a little shallower than the puck, so the puck stands proud and can be tapped.
+    // The small hole through the middle lets you push the puck back out from underneath.
+    const floor = Hb - Math.min(p.puckH - 4, Hb - 6);
+    loop.push(P(puckR, Hb), P(puckR, floor), P(6, floor), P(6, 0));
   } else {
     const zc = Hb - PLATE_T;
     // A push button or touch sensor needs a thin patch of wall: a pocket cut from the inside.
-    const pocketR = minSil - (reliefOn ? p.reliefDepth : 0) - 2;
+    const pocketR = minSil - reliefDepth - 2;
     const pocketW = p.dimmer === 'push' ? btn / 2 + 4 : p.dimmer === 'touch' ? 10 : 0;
     const pocket = pocketW > 0 && pocketR > rcav + 1;
     const cav = (th) => (pocket && Math.abs(th - 1.5 * Math.PI) * pocketR <= pocketW ? pocketR : rcav);
     loop.push(P(holeR, Hb), P(holeR, zc), P(holeR + 4, zc));
     if (stem) {
       // The hollow follows the outside: a cup for the lamp holder, a wire channel down the stem, room in the foot.
-      const margin = 3 + (reliefOn ? p.reliefDepth : 0);
+      const margin = 3 + reliefDepth;
       for (let i = 1; i <= 48; i++) {
         const z = zc * (1 - i / 48);
         const r = Math.max(chan, Math.min(rcav, stemAt(z) - margin, holeR + 4 + (zc - z)));
@@ -1722,12 +1812,12 @@ async function to3MF(parts) {
   ]);
 }
 
-return { RING_T, PLATE_T, COLLAR_H, COLLAR_W, FORMS, formShape, reliefWave, buildShade, GEAR_M, GEAR_H, PINION_H, DISH_H, dimmerLayout, buildRing, buildPinion, POST_R, POST_SEAT, buildLightPost, buildCover, CAP_H, buildCap, buildCup, buildBase, bulbRadiusAt, meshVolume, place, scaled, merge, weld, toSTL, to3MF };
+return { RING_T, PLATE_T, COLLAR_H, COLLAR_W, FORMS, formShape, reliefWave, buildShade, GEAR_M, GEAR_H, PINION_H, DISH_H, dimmerLayout, buildRing, buildPinion, POST_R, POST_SEAT, buildLightPost, buildCover, buildDiffuser, CAP_H, buildCap, buildCup, buildBase, bulbRadiusAt, meshVolume, place, scaled, merge, weld, toSTL, to3MF };
 })();
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-const { FORMS, RING_T, PINION_H, formShape, buildShade, buildBase, bulbRadiusAt, dimmerLayout, buildRing, buildPinion, buildCup, buildCap, CAP_H, buildLightPost, buildCover, meshVolume, place, scaled, merge, weld, toSTL, to3MF } = geometryModule;
+const { FORMS, RING_T, PINION_H, formShape, buildShade, buildBase, bulbRadiusAt, dimmerLayout, buildRing, buildPinion, buildCup, buildCap, buildDiffuser, buildLightPost, buildCover, meshVolume, place, scaled, merge, weld, toSTL, to3MF } = geometryModule;
 
 // ---------- Catalogues ----------
 
@@ -1770,6 +1860,8 @@ const BULBS = {
 };
 
 const RELIEF_DEFAULTS = {
+  swirl:    { reliefCount: 9,  reliefDepth: 11, reliefTwist: 150 },
+  flow:     { reliefCount: 40, reliefDepth: 2.5, reliefTwist: 120 },
   ribs:     { reliefCount: 12, reliefDepth: 5, reliefTwist: 90 },
   scallops: { reliefCount: 10, reliefDepth: 5, reliefTwist: 0 },
   pleats:   { reliefCount: 24, reliefDepth: 4, reliefTwist: 0 },
@@ -1796,8 +1888,12 @@ const state = {
   showWall: false,
   name: 'Untitled lamp',
   cutout: 'none', cutSize: 8,
-  cap: 'open', power: 'plug', batteryD: 60, btnD: 12, stemD: 28,
+  cap: 'open', power: 'plug', batteryD: 60, btnD: 12, stemD: 28, puckD: 68, puckH: 24,
   light: 'bulb', postH: 70,
+  mode: 'simple',
+  lobes: 0, lobeDepth: 12, lobeTwist: 180, translucent: false,
+  diffuser: 'none',
+  baseRelief: 'none', baseReliefCount: 24, baseReliefDepth: 2, baseReliefTwist: 0, baseSkin: 'none', baseSkinDepth: 0.5,
   bed: '256', nozzle: '0.4', material: 'pla',
   dimmer: 'none', gearTeeth: 16, potShaft: 'd', potShaftD: 6, potBushD: 7, potBodyD: 17, potTravel: 300, fitGap: 0.3,
 };
@@ -1837,10 +1933,13 @@ function applyDesign(saved) {
   if (!FORMS[state.form]) state.form = DEFAULTS.form;
   if (!['a', 'globe', 'candle', 'tube', 'spot'].includes(state.bulbKind)) state.bulbKind = DEFAULTS.bulbKind;
   state.name = state.name.trim().slice(0, 40) || DEFAULTS.name;
+  if (state.mode !== 'advanced') state.mode = 'simple';
 }
 
 const isTable = () => state.stand === 'table';
-const hasDimmer = () => isTable() && state.dimmer === 'gear';
+/** A battery puck light sits in a seat in the base. It has its own switch and batteries, so nothing is wired. */
+const puck = () => isTable() && state.light === 'puck';
+const hasDimmer = () => isTable() && state.dimmer === 'gear' && !puck();
 /** The twist lamp can use an LED strip on a printed post instead of a bulb. */
 const strip = () => hasDimmer() && state.light === 'strip';
 const scaleK = () => state.printScale / 100;
@@ -1852,8 +1951,10 @@ const scaleK = () => state.printScale / 100;
 function params(k = scaleK()) {
   const wall = k < 1 ? Math.min(state.wall / k, state.width * 0.12) : state.wall;
   // A battery lamp has no cord, so no cable notch.
-  const cable = isTable() && state.power === 'battery' ? 'none' : state.cable;
-  return { ...state, k, wall, cable };
+  const cable = puck() || (isTable() && state.power === 'battery') ? 'none' : state.cable;
+  // A puck light replaces the switch, the wiring and the battery pack.
+  const alone = puck() ? { dimmer: 'none', power: 'plug' } : {};
+  return { ...state, k, wall, cable, ...alone };
 }
 const usesOpening = (which) => FORMS[state.form].uses.includes(which);
 const hasRelief = () => state.relief !== 'none';
@@ -1870,17 +1971,26 @@ const SLIDERS = [
   { id: 'height',      group: 'dim-controls',     label: 'Shade height',    min: 60,  max: 320, step: 1,   unit: 'mm' },
   { id: 'width',       group: 'dim-controls',     label: 'Shade width',     min: 80,  max: 320, step: 1,   unit: 'mm' },
   { id: 'wall',        group: 'dim-controls',     label: 'Wall thickness',  min: 0.8, max: 4,   step: 0.1, unit: 'mm' },
-  { id: 'reliefCount', group: 'surface-controls', label: 'Count',           min: 2,   max: 32,  step: 1,   unit: '',   show: hasRelief },
-  { id: 'reliefDepth', group: 'surface-controls', label: 'Depth',           min: 0.5, max: 12,  step: 0.5, unit: 'mm', show: hasRelief },
+  { id: 'lobes',       group: 'shade-controls',   label: 'Body lobes',      min: 0,   max: 6,   step: 1,   unit: '' },
+  { id: 'lobeDepth',   group: 'shade-controls',   label: 'Lobe depth',      min: 2,   max: 30,  step: 1,   unit: 'mm', show: () => state.lobes >= 2 },
+  { id: 'lobeTwist',   group: 'shade-controls',   label: 'Lobe twist',      min: -360, max: 360, step: 5,  unit: '°',  show: () => state.lobes >= 2 },
+  { id: 'reliefCount', group: 'surface-controls', label: 'Count',           min: 2,   max: 120,  step: 1,   unit: '',   show: hasRelief },
+  { id: 'reliefDepth', group: 'surface-controls', label: 'Depth',           min: 0.5, max: 20,  step: 0.5, unit: 'mm', show: hasRelief },
   { id: 'reliefTwist', group: 'surface-controls', label: 'Twist',           min: -360, max: 360, step: 5,  unit: '°',  show: () => hasRelief() && state.relief !== 'rings' },
   { id: 'skinDepth',   group: 'skin-controls',    label: 'Texture depth',   min: 0.2, max: 1.2, step: 0.1, unit: 'mm', show: () => state.skin !== 'none' },
   { id: 'skinScale',   group: 'skin-controls',    label: 'Texture scale',   min: 0.5, max: 2.5, step: 0.1, unit: '×',  show: () => state.skin !== 'none' },
-  { id: 'bulbD',       group: 'bulb-controls',    label: 'Bulb diameter',   min: 20,  max: 150, step: 1,   unit: 'mm', after: () => { state.bulb = 'custom'; } },
-  { id: 'bulbL',       group: 'bulb-controls',    label: 'Bulb length',     min: 40,  max: 220, step: 1,   unit: 'mm', after: () => { state.bulb = 'custom'; } },
-  { id: 'watts',       group: 'bulb-controls',    label: 'LED power',       min: 2,   max: 15,  step: 1,   unit: 'W' },
-  { id: 'holeD',       group: 'bulb-controls',    label: 'Socket hole',     min: 20,  max: 60,  step: 0.5, unit: 'mm' },
+  { id: 'puckD',       group: 'bulb-controls',    label: 'Puck diameter',   min: 50,  max: 110, step: 1,   unit: 'mm', show: puck },
+  { id: 'puckH',       group: 'bulb-controls',    label: 'Puck height',     min: 15,  max: 45,  step: 1,   unit: 'mm', show: puck },
+  { id: 'bulbD',       group: 'bulb-controls',    label: 'Bulb diameter',   min: 20,  max: 150, step: 1,   unit: 'mm', show: () => !puck(), after: () => { state.bulb = 'custom'; } },
+  { id: 'bulbL',       group: 'bulb-controls',    label: 'Bulb length',     min: 40,  max: 220, step: 1,   unit: 'mm', show: () => !puck(), after: () => { state.bulb = 'custom'; } },
+  { id: 'watts',       group: 'bulb-controls',    label: 'LED power',       min: 2,   max: 15,  step: 1,   unit: 'W', show: () => !puck() },
+  { id: 'holeD',       group: 'bulb-controls',    label: 'Socket hole',     min: 20,  max: 60,  step: 0.5, unit: 'mm', show: () => !puck() },
   { id: 'baseD',       group: 'base-controls',    label: 'Foot diameter',   min: 60,  max: 300, step: 1,   unit: 'mm', show: isTable },
   { id: 'baseH',       group: 'base-controls',    label: 'Base height',     min: 35,  max: 320, step: 1,   unit: 'mm', show: isTable },
+  { id: 'baseReliefCount', group: 'base-look-controls', label: 'Pattern count', min: 2, max: 120, step: 1, unit: '', show: () => isTable() && state.baseRelief !== 'none' },
+  { id: 'baseReliefDepth', group: 'base-look-controls', label: 'Pattern depth', min: 0.5, max: 12, step: 0.5, unit: 'mm', show: () => isTable() && state.baseRelief !== 'none' },
+  { id: 'baseReliefTwist', group: 'base-look-controls', label: 'Pattern twist', min: -360, max: 360, step: 5, unit: '°', show: () => isTable() && state.baseRelief !== 'none' && state.baseRelief !== 'rings' },
+  { id: 'baseSkinDepth', group: 'base-look-controls', label: 'Skin depth', min: 0.2, max: 1.2, step: 0.1, unit: 'mm', show: () => isTable() && state.baseSkin !== 'none' },
   { id: 'stemD',       group: 'base-controls',    label: 'Stem thickness',  min: 16,  max: 70,  step: 1,   unit: 'mm', show: () => isTable() && state.baseShape === 'stem' },
   { id: 'cableD',      group: 'base-controls-2',  label: 'Cable diameter',  min: 4,   max: 9,   step: 0.5, unit: 'mm', show: () => isTable() && state.cable === 'notch' && state.power !== 'battery' },
   { id: 'printScale',  group: 'make-controls',    label: 'Print scale',     min: 20,  max: 100, step: 5,   unit: '%' },
@@ -1898,16 +2008,18 @@ const SLIDERS = [
 
 const SELECTS = [
   { id: 'relief', group: 'surface-selects', label: 'Relief',
-    options: [['none', 'None'], ['ribs', 'Ribs'], ['scallops', 'Scallops'], ['pleats', 'Pleats'], ['rings', 'Rings'], ['diamonds', 'Diamonds']],
+    options: [['none', 'None'], ['swirl', 'Swirl'], ['flow', 'Flow'], ['ribs', 'Ribs'], ['scallops', 'Scallops'], ['pleats', 'Pleats'], ['rings', 'Rings'], ['diamonds', 'Diamonds']],
     after: (v) => Object.assign(state, RELIEF_DEFAULTS[v] || {}) },
-  { id: 'reliefOn', group: 'surface-selects', label: 'Apply to', show: hasRelief,
+  { id: 'reliefOn', group: 'surface-selects', label: 'Apply to', show: () => false,   // the base now has its own pattern in step 05
     options: [['shade', 'Shade'], ['base', 'Base'], ['both', 'Shade and base']] },
   { id: 'skin', group: 'skin-selects', label: 'Skin',
     options: [['none', 'Smooth (none)'], ['leather', 'Leather'], ['linen', 'Linen'], ['wood', 'Wood grain'], ['hammered', 'Hammered']] },
-  { id: 'socket', group: 'bulb-selects', label: 'Socket',
+  { id: 'diffuser', group: 'bulb-selects', label: 'Diffuser', show: isTable,
+    options: [['none', 'None'], ['tube', 'A thin tube over the light']] },
+  { id: 'socket', group: 'bulb-selects', label: 'Socket', show: () => !puck(),
     options: Object.entries(SOCKETS).map(([k, s]) => [k, s.label]),
     after: (v) => { state.holeD = SOCKETS[v].hole; } },
-  { id: 'bulb', group: 'bulb-selects', label: 'Bulb shape',
+  { id: 'bulb', group: 'bulb-selects', label: 'Bulb shape', show: () => !puck(),
     options: Object.entries(BULBS).map(([k, b]) => [k, b.label]),
     after: (v) => {
       const b = BULBS[v];
@@ -1918,7 +2030,11 @@ const SELECTS = [
   { id: 'stand', group: 'base-selects', label: 'How it stands',
     options: [['table', 'Table lamp on a base'], ['pendant', 'Pendant, hangs from cable']] },
   { id: 'baseShape', group: 'base-selects', label: 'Base silhouette', show: isTable,
-    options: [['straight', 'Straight'], ['rounded', 'Rounded'], ['waisted', 'Waisted'], ['stepped', 'Stepped'], ['stem', 'Stem']] },
+    options: [['straight', 'Straight'], ['rounded', 'Rounded'], ['waisted', 'Waisted'], ['cushion', 'Cushion'], ['stepped', 'Stepped'], ['stem', 'Stem']] },
+  { id: 'baseRelief', group: 'base-look-selects', label: 'Base pattern', show: isTable,
+    options: [['none', 'None'], ['ribs', 'Ribs'], ['scallops', 'Scallops'], ['pleats', 'Pleats'], ['rings', 'Rings'], ['diamonds', 'Diamonds'], ['swirl', 'Swirl'], ['flow', 'Flow']] },
+  { id: 'baseSkin', group: 'base-look-selects', label: 'Base skin', show: isTable,
+    options: [['none', 'Smooth (none)'], ['leather', 'Leather'], ['linen', 'Linen'], ['wood', 'Wood grain'], ['hammered', 'Hammered']] },
   { id: 'cutout', group: 'cut-selects', label: 'Cut-outs',
     options: [['none', 'None'], ['dots', 'Dots'], ['slots', 'Slots'], ['lattice', 'Lattice']] },
   { id: 'bed', group: 'make-selects', label: 'Print bed',
@@ -1933,8 +2049,8 @@ const SELECTS = [
     options: [['plug', 'Plug-in'], ['battery', 'Battery (cordless)']] },
   { id: 'dimmer', group: 'dimmer-selects', label: 'Switched by', show: isTable,
     options: [['none', 'Nothing built in'],['gear', 'Twisting the shade (dims)'], ['push', 'A push button'], ['touch', 'A touch sensor']] },
-  { id: 'light', group: 'dimmer-selects', label: 'Light', show: hasDimmer,
-    options: [['bulb', 'A bulb in a holder'], ['strip', 'LED strip on a printed post']] },
+  { id: 'light', group: 'bulb-selects', label: 'Light', show: isTable,
+    options: [['bulb', 'A bulb in a holder'], ['puck', 'A battery puck light'], ['strip', 'LED strip on a post (twist dimmer only)']] },
   { id: 'potShaft', group: 'dimmer-selects', label: 'Potentiometer shaft', show: hasDimmer,
     options: [['d', 'D-shaped (one flat)'], ['round', 'Round or knurled']] },
   { id: 'joint', group: 'base-selects-2', label: 'Joint', show: () => isTable() && !hasDimmer(),
@@ -2008,7 +2124,9 @@ lamp.add(shadeMesh, baseMesh, ringMesh, pinionMesh);
 const cupMesh = new THREE.Mesh(new THREE.BufferGeometry(), baseMat);
 const capMesh = new THREE.Mesh(new THREE.BufferGeometry(), shadeMat);
 capMesh.castShadow = true;
-lamp.add(cupMesh, capMesh);
+const diffuserMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, transparent: true, opacity: 0.55, emissive: 0xfff1d6 });
+const diffuserMesh = new THREE.Mesh(new THREE.BufferGeometry(), diffuserMat);
+lamp.add(cupMesh, capMesh, diffuserMesh);
 for (const m of [shadeMesh, baseMesh, ringMesh, pinionMesh]) m.castShadow = true;
 
 // A wall behind the lamp, to see the light and shadow the shade throws.
@@ -2048,6 +2166,7 @@ let fullShade = null;  // the full-size design, which is what the bulb has to fi
 let cup = null;        // ceiling cup for a pendant
 let cap = null;        // cap for the top of a table lamp's shade
 let post = null;       // light post for an LED strip
+let diffuser = null;   // thin tube that stands over the light
 let cover = null;      // base cover that holds a battery in
 let twist = 1;         // twist preview: 0 = dimmed right down, 1 = full brightness
 let glowPower = 0;     // bulb brightness when fully on
@@ -2056,7 +2175,9 @@ let dim = null;        // twist-to-dim layout, or null
 let ring = null;
 let pinion = null;
 
-const bulbSpec = () => (strip()
+const bulbSpec = () => (puck()
+  ? { d: state.puckD, l: state.puckH, kind: 'tube', capD: state.puckD }
+  : strip()
   ? { d: 32, l: state.postH + 2, kind: 'tube', capD: 32 }   // the light post with its strip
   : { d: state.bulbD, l: state.bulbL, kind: state.bulbKind, capD: SOCKETS[state.socket].capD });
 
@@ -2109,6 +2230,11 @@ function rebuild() {
 
   shadeMat.color.set(state.color);
   shadeMat.emissive.set(state.color);
+  // Translucent plastic: you can see a little through it, and it glows much more when lit.
+  shadeMat.transparent = state.translucent;
+  shadeMat.opacity = state.translucent ? 0.78 : 1;
+  shadeMat.side = state.translucent ? THREE.DoubleSide : THREE.FrontSide;
+  shadeMat.needsUpdate = true;
   document.body.dataset.lit = state.lit;
   baseMat.color.set(state.baseColor);
 
@@ -2120,7 +2246,7 @@ function rebuild() {
   swap(bulbMesh, new THREE.LatheGeometry(outline, 40));
   if (isTable()) {
     bulbMesh.rotation.x = 0;
-    bulbMesh.position.y = state.baseH + SOCKET_RISE;
+    bulbMesh.position.y = puck() ? state.baseH - Math.min(state.puckH - 4, state.baseH - 6) : state.baseH + SOCKET_RISE;
     glow.position.set(0, bulbMesh.position.y + bulb.l * 0.6, 0);
   } else {
     bulbMesh.rotation.x = Math.PI;
@@ -2141,11 +2267,23 @@ function rebuild() {
   cap = isTable() && state.cap === 'cap' ? buildCap(p, shade) : null;
   capMesh.visible = !!cap && state.showShade;
   if (cap) {
-    swap(capMesh, toGeometry(place(cap, { flipH: CAP_H })));
-    capMesh.position.z = shadeMesh.position.z + state.height - (CAP_H - 2.4);
+    swap(capMesh, toGeometry(place(cap, { flipH: cap.h })));
+    capMesh.position.z = shadeMesh.position.z + state.height - (cap.h - cap.t);
   }
 
   post = strip() ? buildLightPost(p) : null;
+
+  // The diffuser stands on the base over the light: a little wider and taller than it.
+  diffuser = null;
+  diffuserMesh.visible = false;
+  if (isTable() && state.diffuser === 'tube') {
+    const light = bulbSpec();
+    const up = bulbMesh.position.y - state.baseH;   // where the light starts, above the base's top
+    diffuser = buildDiffuser(p, light.d / 2 + 6, Math.max(20, up + light.l + 8));
+    swap(diffuserMesh, toGeometry(place(diffuser, { flipH: diffuser.h })));
+    diffuserMesh.position.z = state.baseH;
+    diffuserMesh.visible = true;
+  }
   cover = base && !base.stem && isTable() && state.power === 'battery' ? buildCover(p, base) : null;
 
   wall.visible = state.showWall;
@@ -2187,6 +2325,7 @@ function parts() {
   else if (state.joint === 'fused') list = [{ name: 'Lamp', file: 'lamp', mesh: merge([base, place(shade, { dz: state.baseH - 0.4 })]) }];
   else list = [{ name: 'Shade', file: 'lamp-shade', mesh: shade }, { name: 'Base', file: 'lamp-base', mesh: base }];
   if (cap) list.push({ name: 'Cap', file: 'lamp-cap', mesh: cap });
+  if (diffuser) list.push({ name: 'Diffuser', file: 'lamp-diffuser', mesh: diffuser });
   if (post) list.push({ name: 'Light post', file: 'lamp-light-post', mesh: post });
   if (cover) list.push({ name: 'Base cover', file: 'lamp-base-cover', mesh: cover });
   return k < 1 ? list.map((part) => ({ ...part, mesh: scaled(part.mesh, k) })) : list;
@@ -2200,8 +2339,8 @@ const massOf = (mesh, k) => (meshVolume(mesh) / 1000) * MATERIALS[state.material
 const grams = (mesh, k) => `${massOf(mesh, k).toFixed(0)} g`;
 
 /** How the lamp is switched: 'none', 'gear' (twist to dim), 'push' or 'touch'. Only table lamps have a control. */
-const control = () => (isTable() ? state.dimmer : 'none');
-const onBattery = () => isTable() && state.power === 'battery';
+const control = () => (isTable() && !puck() ? state.dimmer : 'none');
+const onBattery = () => isTable() && !puck() && state.power === 'battery';
 /** Anything with a control or a battery runs on a low voltage, never mains. */
 const lowVoltage = () => control() !== 'none' || onBattery();
 
@@ -2239,7 +2378,9 @@ function updateReadouts() {
     else if (state.baseD < state.width * 0.5) warnings.push(`The foot is narrow for a ${state.width} mm shade and the lamp may tip. Make the foot at least ${Math.ceil(state.width * 0.5)} mm across.`);
   }
   if (isTable() && state.cap === 'cap' && !cap) warnings.push('The top opening is too small for a cap. Widen the top opening.');
-  if (cap && state.watts > 6) warnings.push('A cap traps heat. Keep a capped lamp to a 6 W LED or less.');
+  if (diffuser && diffuser.r + 2 > shade.bottomInnerR) warnings.push('The diffuser is wider than the bottom of the shade, so the shade cannot be lowered over it. Widen the bottom opening or use a smaller light.');
+  if (diffuser && diffuser.h > state.height + (dim ? dim.top : 0)) warnings.push('The diffuser is taller than the shade. Make the shade taller or use a shorter light.');
+  if (cap && !puck() && state.watts > 6) warnings.push('A cap traps heat. Keep a capped lamp to a 6 W LED or less.');
   if (lowVoltage() && !strip() && SOCKETS[state.socket].capD === 20) warnings.push('GU10 bulbs are mains voltage. For a switch, dimmer or battery, pick a low-voltage light instead.');
   document.getElementById('warnings').innerHTML = warnings.map((w) => `<li>${w}</li>`).join('');
 
@@ -2272,7 +2413,7 @@ function updateReadouts() {
   const rows = [
     ['Form', FORMS[state.form].label],
     ['Shade size', `${state.width} × ${state.height} mm, ${state.wall.toFixed(1)} mm wall`],
-    ['Surface', hasRelief() ? `${label(selectDef('relief'), state.relief)} on ${label(selectDef('reliefOn'), state.reliefOn).toLowerCase()}` : 'Plain'],
+    ['Shade pattern', hasRelief() ? label(selectDef('relief'), state.relief) : 'Plain'],
     ['Skin', label(selectDef('skin'), state.skin)],
     ['Bulb', `${BULBS[state.bulb].label}, ${SOCKETS[state.socket].label}`],
     ['Stand', isTable() ? `${label(selectDef('baseShape'), state.baseShape)} base, ${dim ? 'turn ring' : label(selectDef('joint'), state.joint).toLowerCase()}` : 'Pendant'],
@@ -2379,7 +2520,7 @@ function bindLook(id, type) {
   el.addEventListener(type === 'check' ? 'change' : 'input', () => { state[id] = type === 'check' ? el.checked : el.value; schedule(); });
   return () => { if (type === 'check') el.checked = state[id]; else el.value = state[id]; };
 }
-const lookSyncs = [bindLook('color'), bindLook('baseColor'), bindLook('lit', 'check'), bindLook('showShade', 'check'), bindLook('showWall', 'check')];
+const lookSyncs = [bindLook('color'), bindLook('baseColor'), bindLook('lit', 'check'), bindLook('showShade', 'check'), bindLook('showWall', 'check'), bindLook('translucent', 'check')];
 document.getElementById('twist').addEventListener('input', (e) => { twist = Number(e.target.value) / 100; });
 
 function syncUI() {
@@ -2388,6 +2529,53 @@ function syncUI() {
   lookSyncs.forEach((f) => f());
   const nameBox = document.getElementById('designName');
   if (nameBox.value !== state.name) nameBox.value = state.name;
+  document.body.dataset.mode = state.mode;
+  for (const b of document.querySelectorAll('#mode button')) b.setAttribute('aria-pressed', b.dataset.mode === state.mode);
+}
+
+// ---------- Simple mode: pick a finished look, then size it ----------
+
+// Low shades take a small bulb, so every look opens without warnings.
+const SMALL_BULB = { socket: 'e14', holeD: 28.5, bulb: 'custom', bulbKind: 'globe', bulbD: 45, bulbL: 70, watts: 5 };
+const LOOKS = [
+  { name: 'Twisted wave', design: { form: 'sphere', height: 200, width: 180, topOpen: 110, bottomOpen: 100, wall: 0.8, lobes: 3, lobeDepth: 13, lobeTwist: 200, relief: 'ribs', reliefCount: 36, reliefDepth: 2.5, reliefTwist: 200, translucent: true, color: '#f4e27a', baseColor: '#6f7276', baseShape: 'straight', baseD: 110, baseH: 35 } },
+  { name: 'Ribbed globe', design: { form: 'sphere', height: 170, width: 190, topOpen: 100, bottomOpen: 110, wall: 0.8, relief: 'ribs', reliefCount: 90, reliefDepth: 0.8, reliefTwist: 0, translucent: true, color: '#f4efe4', baseShape: 'cushion', baseD: 150, baseH: 40, baseRelief: 'ribs', baseReliefCount: 60, baseReliefDepth: 1, baseColor: '#7a4a33', ...SMALL_BULB, bulbL: 80, diffuser: 'tube' } },
+  { name: 'Flow column', design: { form: 'free', free: [62, 96, 100, 96, 66], height: 210, width: 170, wall: 0.8, relief: 'flow', reliefCount: 40, reliefDepth: 2.5, reliefTwist: 120, translucent: true, color: '#ff7a3d', baseColor: '#2b2d31', baseShape: 'straight', baseD: 110, baseH: 35 } },
+  { name: 'Fine-line egg', design: { form: 'pear', height: 230, width: 190, topOpen: 60, bottomOpen: 90, wall: 0.8, relief: 'rings', reliefCount: 110, reliefDepth: 0.7, reliefTwist: 0, color: '#efe9dc', baseColor: '#9a6b3f', baseShape: 'rounded', baseD: 100, baseH: 35, baseSkin: 'wood', baseSkinDepth: 0.6 } },
+  { name: 'Swirl globe', design: { form: 'sphere', height: 190, width: 190, topOpen: 90, bottomOpen: 120, wall: 0.8, relief: 'swirl', reliefCount: 9, reliefDepth: 11, reliefTwist: 150, baseShape: 'straight', baseD: 130, baseH: 35 } },
+  { name: 'Mushroom', design: { form: 'dome', height: 110, width: 230, topOpen: 60, bottomOpen: 230, relief: 'none', cap: 'cap', baseShape: 'stem', baseD: 130, baseH: 210, stemD: 26, color: '#d9d4c8', baseColor: '#d9d4c8', ...SMALL_BULB } },
+  { name: 'Glow donut', design: { form: 'torus', height: 100, width: 250, topOpen: 60, bottomOpen: 110, wall: 0.8, relief: 'none', cap: 'cap', baseShape: 'straight', baseD: 110, baseH: 35, color: '#ffd9c2', ...SMALL_BULB, bulbL: 60 } },
+  { name: 'Fluted bowl', design: { form: 'free', free: [34, 60, 82, 95, 100], height: 120, width: 246, relief: 'pleats', reliefCount: 32, reliefDepth: 4, reliefTwist: 0, baseShape: 'straight', baseD: 100, baseH: 40, color: '#cfe3da', ...SMALL_BULB } },
+  { name: 'Lantern', design: { form: 'cylinder', height: 200, width: 140, topOpen: 140, bottomOpen: 140, relief: 'none', cutout: 'lattice', cutSize: 10, baseShape: 'stepped', baseD: 160, baseH: 45 } },
+  { name: 'Ripple tower', design: { form: 'pear', height: 240, width: 170, topOpen: 70, bottomOpen: 110, relief: 'rings', reliefCount: 14, reliefDepth: 5, reliefTwist: 0, baseShape: 'rounded', baseD: 140, baseH: 50 } },
+];
+
+function setMode(mode) {
+  state.mode = mode;
+  syncUI();
+  saveDesign();
+}
+for (const b of document.querySelectorAll('#mode button')) b.addEventListener('click', () => setMode(b.dataset.mode));
+document.getElementById('goAdvanced').addEventListener('click', () => setMode('advanced'));
+document.getElementById('simpleDownload').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  try { download(await to3MF(parts()), 'lamp.3mf'); } finally { e.target.disabled = false; }
+});
+
+const lookBar = document.getElementById('looks');
+for (const look of LOOKS) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.innerHTML = silhouette(look.design).replace('viewBox="0 0 34 26"', 'viewBox="-2 -4 38 34"');
+  b.append(look.name);
+  b.addEventListener('click', () => {
+    applyDesign(look.design);
+    state.name = look.name;
+    state.mode = 'simple';
+    syncUI();
+    schedule();
+  });
+  lookBar.appendChild(b);
 }
 
 document.getElementById('random').addEventListener('click', () => {
@@ -2654,6 +2842,10 @@ function route() {
   resize();
   window.scrollTo(0, 0);
 }
+// If the home page's video file is missing, hide its section instead of showing a broken player.
+document.querySelectorAll('.film video').forEach((video) => {
+  video.addEventListener('error', () => { video.closest('.film').hidden = true; });
+});
 window.addEventListener('hashchange', route);
 route();
 
@@ -2676,8 +2868,11 @@ function setMood(m) {
   fill.intensity = mix(0.5, 0.04);
   bedMat.color.set(m > 0.5 ? 0xffffff : 0x16181b);
   bedMat.opacity = mix(0.22, 0.14);
-  shadeMat.emissiveIntensity = 0.34 * m * bright;
+  shadeMat.emissiveIntensity = (state.translucent ? 0.6 : 0.34) * m * bright;
+  // A glowing translucent shade still needs a little side light, or its ridges vanish.
+  if (state.translucent) key.intensity = mix(2.2, 0.7);
   bulbMat.emissiveIntensity = 1.5 * m * bright;
+  diffuserMat.emissiveIntensity = 0.9 * m * bright;
   glow.intensity = glowPower * m * bright;
 }
 renderer.setAnimationLoop((now) => {
