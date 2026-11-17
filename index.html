@@ -920,25 +920,43 @@ function profile(p, n) {
 
 // ---------- Relief (large pattern) ----------
 
-function reliefWave(p, theta, t) {
-  const n = p.reliefCount;
-  const tw = (p.reliefTwist * Math.PI) / 180;
-  const phase = n * (theta + tw * t);
-  switch (p.relief) {
+/** The patterns made of lines running up the shade. Returns null for the others. */
+function lineWave(kind, n, tw, theta, t, phase, warp) {
+  switch (kind) {
     case 'swirl': {
       // Flowing waves: the twist is slow at the rims and fast through the middle, so the
       // ridges sweep in an S, and each wave leans over like a curling crest.
-      const sweep = n * (theta + tw * (0.5 - 0.5 * Math.cos(Math.PI * t)));
+      const sweep = n * (theta + tw * (0.5 - 0.5 * Math.cos(Math.PI * t))) + warp;
       return Math.sin(sweep + 0.7 * Math.sin(sweep));
     }
     case 'flow': {
       // Marbled, flowing ridges: the lines wander from side to side as they climb.
       const drift = 0.32 * Math.sin(TAU * 1.5 * t + 2 * theta) + 0.14 * Math.sin(TAU * 3.1 * t - 3 * theta);
-      return Math.cos(n * (theta + tw * t + drift));
+      return Math.cos(n * (theta + tw * t + drift) + warp);
     }
     case 'ribs':     return Math.cos(phase);
     case 'scallops': return 2 * Math.abs(Math.cos(phase / 2)) - 1;
     case 'pleats':   return (2 / Math.PI) * Math.asin(Math.cos(phase));
+    default:         return null;
+  }
+}
+
+function reliefWave(p, theta, t) {
+  const n = p.reliefCount;
+  const tw = (p.reliefTwist * Math.PI) / 180;
+  // Uneven lines: the ridges bunch together and spread apart, and some stand taller than others,
+  // so they read as flowing strands rather than a machine-cut thread. Whole multiples of theta keep the seam closed.
+  const v = Math.max(0, Math.min(1, (p.reliefVary || 0) / 100));
+  const warp = v ? v * (1.6 * Math.sin(3 * theta + 2 + 1.2 * t) + 1.1 * Math.sin(7 * theta + 0.5 - 1.5 * t) + 0.7 * Math.sin(13 * theta + 4 + t)) : 0;
+  const gain = v ? 1 - 0.55 * v * (0.5 + 0.5 * Math.sin(5 * theta + 1 + t) * Math.sin(11 * theta - t + 0.7)) : 1;
+  const phase = n * (theta + tw * t) + warp;
+  if (v) {
+    const base = lineWave(p.relief, n, tw, theta, t, phase, warp);
+    if (base !== null) return gain * base + 0.3 * v * Math.cos(2 * phase + 1);
+  }
+  const plain = lineWave(p.relief, n, tw, theta, t, phase, 0);
+  if (plain !== null) return plain;
+  switch (p.relief) {
     case 'rings':    return Math.cos(TAU * n * t * 0.5);
     case 'diamonds': { const k = tw || 2.1; return Math.cos(n * (theta + k * t)) * Math.cos(n * (theta - k * t)); }
     default:         return 0;
@@ -1139,12 +1157,28 @@ function makeCutout(p) {
   }
 }
 
+/** How many times the pattern repeats from bottom to top. Fine, twisted patterns need many rings to stay smooth. */
+function reliefCycles(p) {
+  if (!p.relief || p.relief === 'none') return 0;
+  const n = p.reliefCount, turns = Math.abs(p.reliefTwist || 0) / 360;
+  return rawCycles(p, n, turns) + ((p.reliefVary || 0) / 100) * 2;
+}
+function rawCycles(p, n, turns) {
+  switch (p.relief) {
+    case 'swirl':    return n * turns * 2;
+    case 'flow':     return n * (turns + 0.9);
+    case 'rings':    return n / 2;
+    case 'diamonds': return n * (turns || 0.33) * 2;
+    default:         return n * turns;
+  }
+}
+
 function buildShade(p) {
   const skin = makeSkin(p);
   const cut = makeCutout(p);
   const fineRibs = p.relief !== 'none' && p.reliefCount > 24;   // many thin ridges need a finer mesh
-  const S = skin || cut || fineRibs ? 480 : 240;
-  const n = skin || cut ? 240 : 120;
+  const S = fineRibs && p.reliefCount > 48 ? 720 : skin || cut || fineRibs ? 480 : 240;
+  const n = Math.max(skin || cut ? 240 : 120, Math.min(480, 20 * Math.ceil((6 * (reliefCycles(p) + (p.lobes >= 2 && p.relief !== 'none' ? p.reliefCount * ((p.lobeSway || 0) / 360) * 7.2 : 0))) / 20)));
   const prof = profile(p, n);
   const { pts, L } = prof;
   const H = p.height;
@@ -1162,11 +1196,13 @@ function buildShade(p) {
   // as they rise. They sit under the surface relief, so fine ridges can ride over big waves.
   const lobes = p.lobes >= 2 && p.lobeDepth > 0 ? p.lobes : 0;
   const lobeTw = ((p.lobeTwist || 0) * Math.PI) / 180;
+  // Sway swings the waves one way and then back as they climb, instead of turning steadily like a screw.
+  const lobeSway = ((p.lobeSway || 0) * Math.PI) / 180;
   const lobeEase = 5 + Math.max(10, 2.5 * (p.lobeDepth || 0));
   for (const q of pts) q.lobeFade = smooth(5, lobeEase, Math.min(q.s, L - q.s));
   const relief = (q, th) =>
-    (reliefOn ? p.reliefDepth * reliefWave(p, th, q.s / L) * q.reliefFade : 0)
-    + (lobes ? p.lobeDepth * Math.cos(lobes * (th + lobeTw * (q.s / L))) * q.lobeFade : 0);
+    (reliefOn ? p.reliefDepth * reliefWave(p, lobes ? th + lobeSway * Math.sin(TAU * 1.15 * (q.s / L)) : th, q.s / L) * q.reliefFade : 0)
+    + (lobes ? p.lobeDepth * Math.cos(lobes * (th + lobeTw * (q.s / L) + lobeSway * Math.sin(TAU * 1.15 * (q.s / L)))) * q.lobeFade : 0);
 
   const outerAt = (q) => (th) => {
     let d = relief(q, th);
@@ -1527,7 +1563,7 @@ function buildBase(p, shade, d = null) {
       },
     });
   };
-  const m = skin ? Math.max(48, Math.round(Hb * 1.5)) : 32;
+  const m = Math.max(skin ? Math.max(48, Math.round(Hb * 1.5)) : 32, Math.min(200, Math.ceil(6 * reliefCycles(own))));
   if (stem) {
     for (let i = 0; i <= 64; i++) wall(stemAt((Hb * i) / 64), (Hb * i) / 64, i === 0 || i === 64);
   } else if (p.baseShape === 'stepped') {
@@ -1812,7 +1848,7 @@ async function to3MF(parts) {
   ]);
 }
 
-return { RING_T, PLATE_T, COLLAR_H, COLLAR_W, FORMS, formShape, reliefWave, buildShade, GEAR_M, GEAR_H, PINION_H, DISH_H, dimmerLayout, buildRing, buildPinion, POST_R, POST_SEAT, buildLightPost, buildCover, buildDiffuser, CAP_H, buildCap, buildCup, buildBase, bulbRadiusAt, meshVolume, place, scaled, merge, weld, toSTL, to3MF };
+return { RING_T, PLATE_T, COLLAR_H, COLLAR_W, FORMS, formShape, reliefWave, reliefCycles, buildShade, GEAR_M, GEAR_H, PINION_H, DISH_H, dimmerLayout, buildRing, buildPinion, POST_R, POST_SEAT, buildLightPost, buildCover, buildDiffuser, CAP_H, buildCap, buildCup, buildBase, bulbRadiusAt, meshVolume, place, scaled, merge, weld, toSTL, to3MF };
 })();
 
 import * as THREE from 'three';
@@ -1823,7 +1859,7 @@ const { FORMS, RING_T, PINION_H, formShape, buildShade, buildBase, bulbRadiusAt,
 
 const STEPS = [
   { id: 'shade',   name: 'Shade',   desc: 'Shade silhouette, dimensions and wall' },
-  { id: 'surface', name: 'Surface', desc: 'One relief for shade, base or both' },
+  { id: 'surface', name: 'Surface', desc: 'A pattern for the shade. The base has its own in step 05' },
   { id: 'skin',    name: 'Skin',    desc: 'Fine outside texture: leather, linen, wood…' },
   { id: 'bulb',    name: 'Bulb',    desc: 'Socket type, lamp specs and emitter geometry' },
   { id: 'base',    name: 'Base',    desc: 'Base silhouette, joint and cable routing' },
@@ -1891,7 +1927,7 @@ const state = {
   cap: 'open', power: 'plug', batteryD: 60, btnD: 12, stemD: 28, puckD: 68, puckH: 24,
   light: 'bulb', postH: 70,
   mode: 'simple',
-  lobes: 0, lobeDepth: 12, lobeTwist: 180, translucent: false,
+  lobes: 0, lobeDepth: 12, lobeTwist: 180, lobeSway: 0, reliefVary: 0, translucent: false,
   diffuser: 'none',
   baseRelief: 'none', baseReliefCount: 24, baseReliefDepth: 2, baseReliefTwist: 0, baseSkin: 'none', baseSkinDepth: 0.5,
   bed: '256', nozzle: '0.4', material: 'pla',
@@ -1973,9 +2009,11 @@ const SLIDERS = [
   { id: 'wall',        group: 'dim-controls',     label: 'Wall thickness',  min: 0.8, max: 4,   step: 0.1, unit: 'mm' },
   { id: 'lobes',       group: 'shade-controls',   label: 'Body lobes',      min: 0,   max: 6,   step: 1,   unit: '' },
   { id: 'lobeDepth',   group: 'shade-controls',   label: 'Lobe depth',      min: 2,   max: 30,  step: 1,   unit: 'mm', show: () => state.lobes >= 2 },
+  { id: 'lobeSway',    group: 'shade-controls',   label: 'Lobe sway',       min: 0,   max: 90,  step: 5,   unit: '°',  show: () => state.lobes >= 2 },
   { id: 'lobeTwist',   group: 'shade-controls',   label: 'Lobe twist',      min: -360, max: 360, step: 5,  unit: '°',  show: () => state.lobes >= 2 },
   { id: 'reliefCount', group: 'surface-controls', label: 'Count',           min: 2,   max: 120,  step: 1,   unit: '',   show: hasRelief },
   { id: 'reliefDepth', group: 'surface-controls', label: 'Depth',           min: 0.5, max: 20,  step: 0.5, unit: 'mm', show: hasRelief },
+  { id: 'reliefVary',  group: 'surface-controls', label: 'Uneven lines',    min: 0,   max: 100, step: 5,   unit: '%',  show: () => ['ribs', 'flow', 'swirl', 'scallops', 'pleats'].includes(state.relief) },
   { id: 'reliefTwist', group: 'surface-controls', label: 'Twist',           min: -360, max: 360, step: 5,  unit: '°',  show: () => hasRelief() && state.relief !== 'rings' },
   { id: 'skinDepth',   group: 'skin-controls',    label: 'Texture depth',   min: 0.2, max: 1.2, step: 0.1, unit: 'mm', show: () => state.skin !== 'none' },
   { id: 'skinScale',   group: 'skin-controls',    label: 'Texture scale',   min: 0.5, max: 2.5, step: 0.1, unit: '×',  show: () => state.skin !== 'none' },
@@ -2539,6 +2577,8 @@ function syncUI() {
 const SMALL_BULB = { socket: 'e14', holeD: 28.5, bulb: 'custom', bulbKind: 'globe', bulbD: 45, bulbL: 70, watts: 5 };
 const LOOKS = [
   { name: 'Twisted wave', design: { form: 'sphere', height: 200, width: 180, topOpen: 110, bottomOpen: 100, wall: 0.8, lobes: 3, lobeDepth: 13, lobeTwist: 200, relief: 'ribs', reliefCount: 36, reliefDepth: 2.5, reliefTwist: 200, translucent: true, color: '#f4e27a', baseColor: '#6f7276', baseShape: 'straight', baseD: 110, baseH: 35 } },
+  { name: 'Silk wave', design: { form: 'free', free: [70, 96, 100, 97, 78], height: 200, width: 185, wall: 0.8, lobes: 3, lobeDepth: 13, lobeTwist: 70, lobeSway: 40, relief: 'ribs', reliefCount: 60, reliefDepth: 1.2, reliefTwist: 110, reliefVary: 80, translucent: true, color: '#ff9a3d', baseColor: '#3a3c40', baseShape: 'straight', baseD: 120, baseH: 22 } },
+  { name: 'Fine swirl', design: { form: 'sphere', height: 180, width: 200, topOpen: 100, bottomOpen: 110, wall: 0.8, lobes: 3, lobeDepth: 14, lobeTwist: 200, relief: 'ribs', reliefCount: 70, reliefDepth: 0.8, reliefTwist: 200, translucent: true, color: '#f2b84b', baseColor: '#2b2d31', baseShape: 'waisted', baseD: 120, baseH: 40 } },
   { name: 'Ribbed globe', design: { form: 'sphere', height: 170, width: 190, topOpen: 100, bottomOpen: 110, wall: 0.8, relief: 'ribs', reliefCount: 90, reliefDepth: 0.8, reliefTwist: 0, translucent: true, color: '#f4efe4', baseShape: 'cushion', baseD: 150, baseH: 40, baseRelief: 'ribs', baseReliefCount: 60, baseReliefDepth: 1, baseColor: '#7a4a33', ...SMALL_BULB, bulbL: 80, diffuser: 'tube' } },
   { name: 'Flow column', design: { form: 'free', free: [62, 96, 100, 96, 66], height: 210, width: 170, wall: 0.8, relief: 'flow', reliefCount: 40, reliefDepth: 2.5, reliefTwist: 120, translucent: true, color: '#ff7a3d', baseColor: '#2b2d31', baseShape: 'straight', baseD: 110, baseH: 35 } },
   { name: 'Fine-line egg', design: { form: 'pear', height: 230, width: 190, topOpen: 60, bottomOpen: 90, wall: 0.8, relief: 'rings', reliefCount: 110, reliefDepth: 0.7, reliefTwist: 0, color: '#efe9dc', baseColor: '#9a6b3f', baseShape: 'rounded', baseD: 100, baseH: 35, baseSkin: 'wood', baseSkinDepth: 0.6 } },
