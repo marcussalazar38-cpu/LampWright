@@ -884,7 +884,11 @@ html:has(#home:not([hidden])), html:has(#kits:not([hidden])), html:has(#print:no
   #home .site-nav a, #kits .site-nav a, #print .site-nav a { padding-block: 14px; margin-block: -14px; }
   #home .site-nav .cta, #kits .site-nav .cta, #print .site-nav .cta { margin-block: 0; padding: 12px 16px; }
   #home .site-nav, #kits .site-nav, #print .site-nav { row-gap: 22px; padding-block: 20px 18px; }
-}</style>
+}
+/* The live lamp sits over the backup picture */
+#hero-stage canvas { z-index: 1; }
+#hero-stage img { object-fit: contain; -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent); mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent); }
+</style>
 <script type="importmap">
 {
   "imports": {
@@ -2750,6 +2754,7 @@ const NO_DRAW = new URLSearchParams(location.search).has('dump');
 // The view is only redrawn when something changes, not 60 times a second. Anything that
 // changes the picture calls invalidate(); the camera and the lights fading report themselves.
 let redraw = 2;
+let heroOn = false;   // true while the home page shows the flagship lamp
 function invalidate(frames = 2) { redraw = Math.max(redraw, frames); }
 for (const type of ['input', 'change', 'click', 'keydown']) document.addEventListener(type, () => invalidate(), true);
 window.addEventListener('resize', () => invalidate());
@@ -2990,7 +2995,8 @@ function rebuild() {
   cord.position.y = LIFT + state.height + 200;
 
   const totalH = isTable() ? state.baseH + (dim ? dim.top : 0) + state.height : state.height;
-  controls.target.set(0, lamp.position.y + totalH / 2, 0);
+  if (!heroOn) controls.target.set(0, lamp.position.y + totalH / 2, 0);
+  else showHero(true);
 
   queueFullDetail();
   invalidate();
@@ -3750,14 +3756,65 @@ KITS.forEach((kit) => {
 });
 let page = 'home';
 
+// ---------- Home page hero: the flagship lamp, turning slowly ----------
+// The hero always shows Vesper. It is built once into its own group, so the lamp in the
+// designer, and anything the visitor has made, is never touched.
+const heroGroup = new THREE.Group();
+heroGroup.rotation.x = -Math.PI / 2;
+heroGroup.visible = false;
+scene.add(heroGroup);
+const heroShadeMat = new THREE.MeshStandardMaterial({ roughness: 0.62, transparent: true, opacity: 0.78, side: THREE.DoubleSide });
+const heroBaseMat = new THREE.MeshStandardMaterial({ roughness: 0.5 });
+let hero = null;
+let savedView = null;   // the designer's camera, put back when the visitor leaves the home page
+
+function buildHero() {
+  const look = LOOKS.find((l) => l.name === 'Vesper');
+  const kept = JSON.stringify(state);
+  applyDesign(look.design);
+  const p = { ...params(1), draft: true };
+  const s = buildShade(p);
+  const b = buildBase(p, s, null);
+  const light = bulbSpec();
+  hero = { totalH: state.baseH + state.height, width: state.width, glowY: state.baseH + SOCKET_RISE + light.l * 0.6 };
+  heroShadeMat.color.set(state.color);
+  heroShadeMat.emissive.set(state.color);
+  heroBaseMat.color.set(state.baseColor);
+  const shadeM = new THREE.Mesh(toGeometry(s), heroShadeMat);
+  shadeM.position.z = state.baseH;
+  const baseM = new THREE.Mesh(toGeometry(b), heroBaseMat);
+  shadeM.castShadow = baseM.castShadow = true;
+  heroGroup.add(shadeM, baseM);
+  Object.assign(state, JSON.parse(kept));   // the visitor's own design, back exactly as it was
+}
+
+function showHero(on) {
+  heroOn = on;
+  if (on && !hero) buildHero();
+  heroGroup.visible = on;
+  lamp.visible = !on;
+  bulbMesh.visible = !on;
+  if (!on) return;
+  cord.visible = false;
+  wall.visible = false;
+  glow.castShadow = false;
+  glow.position.set(0, hero.glowY, 0);
+  const fit = Math.max(hero.totalH * 1.45, (hero.width * 1.35) / camera.aspect);
+  const dist = fit / 2 / Math.tan((camera.fov * Math.PI) / 360);
+  const at = new THREE.Vector3(0, hero.totalH * 0.48, 0);
+  controls.target.copy(at);
+  camera.position.copy(at).add(new THREE.Vector3(0.5, 0.22, 0.84).normalize().multiplyScalar(dist));
+  camera.lookAt(at);
+  invalidate();
+}
+
 function route() {
   const asked = location.hash.replace('#/', '');
   page = asked in pages ? asked : 'home';
   for (const [name, el] of Object.entries(pages)) el.hidden = name !== page;
   // One 3D view serves both pages: it sits in the home page's hero, or in the designer's stage.
-  // The home page shows a photograph of the flagship lamp; only the designer runs the 3D view.
-  const host = document.getElementById('stage');
-  const has3d = page === 'design';
+  const host = document.getElementById(page === 'home' ? 'hero-stage' : 'stage');
+  const has3d = page === 'home' || page === 'design';
   if (has3d && canvas.parentElement !== host) host.prepend(canvas);
   controls.enabled = page === 'design';
   bedLine.visible = page !== 'home';   // the print bed is a tool for the designer, not part of the picture
@@ -3765,6 +3822,17 @@ function route() {
   controls.autoRotateSpeed = 0.7;
   canvas.style.touchAction = page === 'design' ? 'none' : 'auto';
   resize();
+  if (page === 'home') {
+    if (!heroOn) savedView = { position: camera.position.clone(), target: controls.target.clone() };
+    showHero(true);
+  } else if (heroOn) {
+    showHero(false);
+    if (savedView) {
+      camera.position.copy(savedView.position);
+      controls.target.copy(savedView.target);
+    }
+    schedule();   // puts the designer's light, cord and wall back
+  }
   window.scrollTo(0, 0);
 }
 // If the home page's video file is missing, hide its section instead of showing a broken player.
@@ -3784,7 +3852,7 @@ function setMood(m) {
   floorMat.color.lerpColors(DAY, NIGHT, page === 'home' ? m : m * 0.9);
   wallMat.color.copy(floorMat.color);
   // With a dimmer, the twist preview turns the shade and sets how bright the bulb is.
-  const bright = dim ? 0.08 + 0.92 * twist : 1;
+  const bright = dim && !heroOn ? 0.08 + 0.92 * twist : 1;
   const angle = dim ? (twist * dim.twist * Math.PI) / 180 : 0;
   shadeMesh.rotation.z = ringMesh.rotation.z = angle;
   pinionMesh.rotation.z = dim ? (angle * dim.z2) / dim.z1 : 0;
@@ -3798,12 +3866,13 @@ function setMood(m) {
   if (state.translucent) key.intensity = mix(2.2, 0.7);
   bulbMat.emissiveIntensity = 1.5 * m * bright;
   diffuserMat.emissiveIntensity = 0.9 * m * bright;
-  glow.intensity = glowPower * m * bright;
+  glow.intensity = (heroOn ? 5 * 9000 : glowPower) * m * bright;
+  heroShadeMat.emissiveIntensity = 0.6 * m;
 }
 renderer.setAnimationLoop((now) => {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  if (page !== 'design') return;
+  if (page !== 'design' && page !== 'home') return;
   const target = state.lit || page === 'home' ? 1 : 0;   // the home page always shows the lamp lit
   const before = mood;
   mood = calm ? target : mood + (target - mood) * (1 - Math.exp(-dt / 0.22));
